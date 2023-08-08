@@ -1,0 +1,390 @@
+.. _Python_paralellism:
+
+=====================================================
+Python'da Paralel Programlama
+=====================================================
+Paralelleştirme, bir görevin daha hızlı tamamlanabilmesi için aynı anda birden fazla işlemci veya işlem birimi kullanarak eş zamanlı olarak gerçekleştirilmesi sürecidir.
+Birçok modern bilgisayar ve işlemci, çoklu çekirdekli yapılara sahiptir. Bu, birden fazla işlemcinin aynı anda çalışabilmesi anlamına gelir. Paralelleştirme, bu çoklu işlemcilerin eş zamanlı olarak kullanılmasını sağlayarak işlem süresini kısaltabilir.
+
+.. note:: 
+    Python'da bulunan GIL (Global Interpreter Lock) birden fazla iş parçacığının paralel olarak ilerlemesini engeller. 
+    GIL, iş parçacığı güvenliği ve veri yarışları içeren kodlar yazmayı zorlaştırmak için işe yarar, ancak bunları yaparken Python'da paralel çoklu iş parçacığı ile çalışmayı önler.
+   
+
+
+.. grid:: 4
+
+    .. grid-item-card::  :ref:`OpenMP`
+        :text-align: center
+    .. grid-item-card:: :ref:`OPENMPI`
+        :text-align: center
+    .. grid-item-card:: :ref:`mpi4py`
+        :text-align: center
+    .. grid-item-card:: :ref:`Çoklu işleme(Multiprocessing)`
+        :text-align: center
+  
+.. figure:: /assets/python-howto/images/paralellism.png
+ :width: 400px
+ :align: center
+
+*https://scicomp.aalto.fi/triton/tut/parallel/*
+
+.. _OpenMP:
+
+=====================================================
+OpenMP
+=====================================================
+
+OPENMP bir bilgisayardaki iş parçacığı sisteminde çalışabilen bir kod oluşturmak için kullanılan bir paralel programlama modelidir. 
+Paylaşımlı bellek işlemcileri için taşınabilir ve ölçeklenebilir bir programlama modeli sunar. İlk amacı döngüleri parallelleştirmek ve indirgemeler yapmaktır.
+İş parçacıkları aynı kaynaklar için rekabet edip aynı verileri güncellediklerinden OpenMP'de yanlış paylaşım, çekişme ve bellek bant genişliği(memory bandwith) sınırlamaları nedeniyle performans sorunları yaşayabilir.
+
+Python'da OpenMP benzeri paralel programlama yeteneklerine erişmek için, CPython yani Python'ın C dili tabanlı uygulaması ile uyumlu olan **"Numba"** gibi kütüphaneleri kullanabilirsiniz. 
+
+
+
+
+
+=====================================================
+Numba
+=====================================================
+
+
+Numba, Python programlarını otomatik olarak hızlandırmak için kullanılan bir Just-In-Time (JIT) derleme kütüphanesidir. Numba, özellikle hesaplamalı kodları hızlandırmak için tasarlanmıştır. Python kodunu C benzeri yüksek hızlı makine koduna dönüştürerek işlemci hızından faydalanmanıza olanak tanır. Numba, özellikle büyük diziler üzerindeki işlemleri hızlandırmak için kullanışlıdır ve genellikle numpy dizileri ile birlikte kullanılır.
+
+.. note:: 
+    JIT bir programın yürütülmesi sırasında yapılan derlemedir.
+    Yani, yürütme öncesinde değil, çalışma zamanında makine koduna çeviri gerçekleşir.
+    Derleme işlemi çalışma zamanında gerçekleştiğinden, geleneksel derleyicilere göre daha fazla optimizasyon imkanı sunar.
+
+.. tabs::
+
+    .. tab:: numba_python.py
+    .. code-block:: python
+
+        from numba import njit,prange
+        import numpy as np
+        import time
+
+       #ikinci çalıştırmada @njit decaratorünü kullanarak JIT derleyicisi ile çalışır. 
+        @njit(parallel=True)
+        def func(x, y):
+            return x + y
+
+        x = 0.01 * np.arange(1000000).reshape((1000,1000))
+        y = 0.02 * np.arange(1000000).reshape((1000,1000))
+
+        #Sıradan derlenmiş kod yavaş çalışacaktır.
+        start = time.time()
+        z1 = func(x, y)
+        end = time.time()
+        print("İlk fonksiyonun çalışması " + str(end - start) + " saniye aldı.")
+
+        # Numba sayesinde JIT derleyicisini kullanarak daha hızlı çalışan bir kod elde edilir.
+        start = time.time()
+        z2 = func(x, y)
+        end = time.time()
+        print("İkinci fonksiyonun çalışması " + str(end - start) + " saniye aldı.")
+
+.. _OpenMPI:
+
+=====================================================
+OpenMPI
+=====================================================
+
+
+MPI, paralel hesaplama ortamında işlemler arasındaki iletişimi ve koordinasyonu sağlamak için yaygın olarak kullanılan bir standarttır. OpenMPI ise paralel işlemleri yönetmek için kullanılan bir MPI aracıdır. Bu paralel işlemler paylaşılan bir bellek üzerinde olmadığı için iletişim kurmaları gerekir. MPI protokolleri tam olarak burada işimize yarar.
+Bu iletişimde olma hali bazen karmaşıklık yaratabileceği için ağ özelliklerine dikkat edilmelidir. Ağ özellikleri programın performansını etkileyebilir. 
+Daha fazla bilgi için `<https://docs.truba.gov.tr/education/openmpi/index.html>`_  adresini ziyaret edebilirsiniz.
+
+.. note:: 
+    MPI ve paylaşılan bellek paralelliği aynı uygulama tarafından yapıldığında buna genellikle hibrit paralelleştirme denir. Bu modeli kullanan programlar hem birden fazla görev hem de görev başına birden fazla çekirdek gerektirebilir.
+
+.. _mpi4py:
+
+=====================================================
+mpi4py
+=====================================================
+
+
+mpi4py, paralel ve dağıtık hesaplama için Message Passing Interface (MPI) standardına yönelik bir Python kütüphanesidir. 
+
+1. Conda ortamımızı aktifleştirerek başlarız. 
+   
+   .. code-block:: 
+
+    eval "$(/truba/sw/centos7.9/lib/anaconda3/2021.11/bin/conda shell.bash hook)"
+
+2. Daha sonra mpi4py çalışmalarımız için bir environment oluştururuz.
+   
+   .. code-block:: 
+
+    conda create --name fast-mpi4py python=3.8 -y
+
+3. Ortamımızı aktifleştiririz.
+   
+   .. code-block:: 
+
+    conda activate fast-mpi4py
+
+   
+
+4. .. code-block:: 
+   
+    pip install mpi4py --no-cache-dir
+ 
+   yazarak yükleme işlemimizi tamamlarız.
+
+.. tabs::
+
+    .. group-tab:: hello_mpi.py
+
+        .. code-block:: python
+
+            from mpi4py import MPI
+            import sys
+
+            def print_hello(rank, size, name):
+                msg = "Hello World, I am process {0} of {1} on {2}.\n"
+                sys.stdout.write(msg.format(rank,size,name))
+
+            if __name__ == "__main__":
+                size = MPI.COMM_WORLD.Get_size()
+                rank = MPI.COMM_WORLD.Get_rank()
+                name = MPI.Get_processor_name()
+
+            print_hello(rank,size,name)
+
+    .. group-tab:: hello_mpi.slurm
+
+        .. code-block:: bash
+
+            #!/bin/bash
+            #SBATCH -p barbun             #İşin çalıştırılacağı kuyruk adı
+            #SBATCH -N 1                  #n adet taskın başlatılacağı node sayısı
+            #SBATCH -n 4                  #başlatılacak görev sayısı
+            #SBATCH -A {kullanıcı_adı}    #İşi kuyruğa gönderen kullanıcını ismi
+            #SBATCH -o hello_mpi          #çıktıların yazılacağı dosya ismi
+            #SBATCH -J hello_mpi          #İşin kuyrukta görülecek adı
+
+            eval "$(/truba/sw/centos7.9/lib/anaconda3/2021.11/bin/conda shell.bash hook)"
+            conda activate fast-mpi4py
+            module purge
+            module load centos7.9/lib/openmpi/4.1.5-gcc-7
+            mpirun -np 4 python3 hello_mpi.py
+    .. group-tab:: Çıktı
+        - Hello World, I am process 0 of 4 on barbun44.yonetim.
+        - Hello World, I am process 1 of 4 on barbun44.yonetim.
+        - Hello World, I am process 2 of 4 on barbun44.yonetim.
+        - Hello World, I am process 3 of 4 on barbun44.yonetim.
+
+.. image:: https://blogonparallelcomputing.files.wordpress.com/2017/04/launchmpi1.png
+    :width: 600px
+    :align: center
+*https://blogonparallelcomputing.files.wordpress.com/2017/04/launchmpi1.png*
+
+
+.. _Çoklu işleme(Multiprocessing):
+
+=====================================================
+Çoklu İşleme(Multiprocessing)
+=====================================================
+
+
+Birden fazla işlemi aynı anda yapmak anlamına gelir. Yapılan işleri farklı çekirdekler üzerinde paylaştırmak iş yükünü dağıtacağı için daha hızlı çalışmayı sağlar.
+
+.. note:: 
+
+    Çoklu işleme(multiprocessing) ve çoklu iş parçacağı(multithreading) kavramlarını karıştırmamak gerekir.
+    Modern CPU'lar birden fazla çekirdeğe sahiptir; işlemleri paralel olarak çalıştırmak istediğimizde bu çekirdekleri 
+    kullanırız. Çoklu işleme(multiprocessing) tam olarak burada işimize yarar. Ancak çoklu iş parçacığı, aynı anda birden fazla iş parçacağı(threads)
+    çalıştırır ve çekirdeklerin her birinden en üst düzeyde verim almayı amaçlar.
+
+Eşzamanlılık(Concurrency) ve Parallelizm arasındaki fark : Eş zamanlılık birden fazla işlemi aynı zaman dilimi içerisinde gerçekleştirmek demektir. Parallelism ise birden fazla işlemin(processin) aynı anda gerçekleşmesi demektir.  Bir işlemi paralel olarak çalıştırmak, bir işi aynı anda işlenebilecek birkaç küçük parçaya bölebilir. 
+
+.. image:: /assets/python-howto/images/concvsparalel.jpg
+    :align: center
+    
+
+*https://techdifferences.com/difference-between-concurrency-and-parallelism.html*    
+
+
++++++++++
+Python Multiprocessing Modülü
++++++++++
+
+**Pool sınıfı**
+
+Pool sınıfı, bir işlem havuzu oluşturmanıza ve birden fazla işlemi paralel olarak çalıştırmanıza olanak tanır.
+Temel amacı, verilen görevi birden fazla işlem arasında paylaştırarak işlemci çekirdeklerini etkin bir şekilde kullanmaktır. Bu, hesaplamalı yükleri azaltmak, çoklu işlemi paralel olarak gerçekleştirmek veya aynı işlemi farklı veriler üzerinde paralel olarak çalıştırmak gibi durumlarda faydalıdır.
+
+
+
+.. tabs::
+
+    .. tab:: pool_ornek1.py
+        
+        .. code-block:: python
+
+            from multiprocessing import Pool, TimeoutError
+            import time
+            import os
+
+            def f(x):
+                return x*x
+
+            if __name__ == '__main__':
+               
+                with Pool(processes=4) as pool:            # 4 adet işlem başlatılır.
+                    
+                    print(pool.map(f, range(10)))
+
+                    for i in pool.imap_unordered(f, range(10)):
+                        print(i)
+
+                    res = pool.apply_async(f, (20,))      # 1 adet işlem çalıştırılır..
+                    print(res.get(timeout=1))            
+                                    
+                    res = pool.apply_async(os.getpid, ()) # 1 adet işlem çalıştırılır.
+                    print(res.get(timeout=1))             # İşlem ID'si çıktı olarak yazılır.
+
+                    # birden fazla değerlendirme eşzamansız olarak başlatılır.
+                    multiple_results = [pool.apply_async(os.getpid, ()) for i in range(4)]
+                    print([res.get(timeout=1) for res in multiple_results])
+
+                    # Tek bir çalışan işleme sleep methodu uygulanır.
+                    res = pool.apply_async(time.sleep, (10,))
+                    try:
+                        print(res.get(timeout=1))
+                    except TimeoutError:
+                        print("Bir adet çoklu işlem var. Timeout Error.")
+
+                    print("Pool daha fazla işlemi çalıştırmak için müsait.")
+                
+                print("Pool kapandı ve müsait değil.")
+ 
+    .. tab:: pool_ornek1.slurm
+        .. code-block:: bash
+
+            #!/bin/bash
+
+            #SBATCH -p barbun
+            #SBATCH -N 1
+            #SBATCH -n 1
+            #SBATCH -c 4
+            #SBATCH -J pool1_ornek
+            #SBATCH -A {kullanıcı_adı}
+            #SBATCH --time=02-00:00
+            #SBATCH -o pool1_ornek.out
+
+            module purge
+            module load centos7.9/comp/gcc/7
+            srun python3 file2.py
+            
+
+
+
+
+    .. tab:: pool_ornek1 çıktı
+        
+        .. code-block:: text
+
+            
+            [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
+            0
+            4
+            1
+            9
+            25
+            16
+            64
+            36
+            49
+            81
+            400
+            27523
+            [27527, 27526, 27522, 27523]
+            We lacked patience and got a multiprocessing.TimeoutError
+            For the moment, the pool remains available for more work
+            Now the pool is closed and no longer available
+
+    .. tab:: pool_ornek2.py
+
+        .. code-block:: python
+
+            from multiprocessing import Pool
+            import time
+            import math
+
+            N = 6500000
+
+            def cube(x):
+                return math.sqrt(x)
+
+            if __name__ == "__main__":
+                # Önce çoklu işleme ile çalıştıralım.
+                start_time = time.perf_counter()
+                with Pool() as pool:
+                result = pool.map(cube, range(10,N))
+                finish_time = time.perf_counter()
+                print("Program {} saniyede tamamlandi. - multiprocessing kullanarak".format(finish_time-start_time))
+                
+                # Sonrasında ise seri bir şekilde çalıştıralım.
+                
+                start_time = time.perf_counter()
+                result = []
+                for x in range(10,N):
+                result.append(cube(x))
+                finish_time = time.perf_counter()
+                print("Program {} saniyede tamamlandi. - seri bir şekilde".format(finish_time-start_time))
+                print(-----)
+
+    .. tab:: pool_ornek2.slurm
+        
+        .. code-block:: bash
+        
+            #!/bin/bash
+
+            #SBATCH -J pool_ornek2_mpi
+            #SBATCH -p hamsi
+            #SBATCH -N 1
+            #SBATCH -n 4
+            #SBATCH -c 7
+            #SBATCH -A {kullanıcı_adı}
+            #SBATCH -o pool_ornek2
+
+            module purge
+            module load centos7.9/comp/gcc/7
+
+            echo "SLURM_NODELIST $SLURM_NODELIST"
+            echo "NUMBER OF CORES $SLURM_NTASKS
+            srun python3 file3.py
+
+    .. tab:: pool_ornek2 çıktı
+        
+        .. code-block:: bash
+        
+            SLURM_NODELIST hamsi27
+            NUMBER OF CORES 4
+            Program 5.328839018999133 saniyede tamamlandi. - multiprocessing kullanarak
+            Program 7.353244483994786 saniyede tamamlandi - seri bir sekilde 
+            -----
+            Program 9.177415629965253 saniyede tamamlandi. - multiprocessing kullanarak
+            Program 5.0710767389973626 saniyede tamamlandi. - seri bir sekilde 
+            -----
+            Program 7.6777121660416014 saniyede tamamlandi. - multiprocessing kullanarak
+            Program 18.970815424981993 saniyede tamamlandi. - seri bir sekilde 
+            -----
+            Program 12.452059313014615 saniyede tamamlandi. - multiprocessing kullanarak
+            Program 21.805212138977367 saniyede tamamlandi. - seri bir sekilde
+
+
+Pool Ornek 1 açıklaması:
+
+#. ``Pool(processes=4)``  Pool sınıfını kullanarak bir işlem havuzu oluşturuyoruz ve bu işlem havuzunu bir `with` bloğu içinde yönetiyoruz. Bu işlem havuzunda aynı anda en fazla 4 işlem çalıştırılabilir.
+#. ``pool.map()`` fonksiyonu , işlem havuzundaki işlemlere belirli bir fonksiyonu paralel olarak uygular. 
+#.   ``imap_unordered`` yöntemi her bir sayıyı işlem havuzundaki işleme sırayla verir ve sonuçları sıraya koymadan döndürür.    Bu, işlemler bitene kadar beklemek yerine, işlemler paralel olarak tamamlandıkça sonuçları elde etmenize olanak tanır.
+#.   ``pool.apply_async(os.getpid, ())`` ifadesi işlem havuzundaki bir işlemi paralel olarak başlatır ve sonucunu almak için AsyncResult nesnesini döndürür. Sonucu elde ettiğinizde, bu nesne, işlemin yürütülmesi sırasında elde edilen işlem kimliğini (PID) içerecektir.
+#.   Bu sonuçlar, ``multiple_results`` listesinde toplanır. ``res.get(timeout=1)`` AsyncResult nesnesinden sonucu alırken 1 saniye içersinde sonuç gelmezse Timeout Error hatası alınacağını gösterir.
+  
+

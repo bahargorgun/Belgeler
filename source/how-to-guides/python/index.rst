@@ -11,3 +11,5 @@ Bu belge TRUBA altyapısında Python ve ilgili platformların kullanımını kol
 
     anaconda.rst
     jupyter.rst
+    python_kurulum.rst
+    
