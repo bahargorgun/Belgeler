@@ -29,161 +29,6 @@ Birçok modern bilgisayar ve işlemci, çoklu çekirdekli yapılara sahiptir. Bu
 
 *https://scicomp.aalto.fi/triton/tut/parallel/*
 
-.. _OpenMP:
-
-=====================================================
-OpenMP
-=====================================================
-
-OPENMP bir bilgisayardaki iş parçacığı sisteminde çalışabilen bir kod oluşturmak için kullanılan bir paralel programlama modelidir. 
-Paylaşımlı bellek işlemcileri için taşınabilir ve ölçeklenebilir bir programlama modeli sunar. İlk amacı döngüleri parallelleştirmek ve indirgemeler yapmaktır.
-İş parçacıkları aynı kaynaklar için rekabet edip aynı verileri güncellediklerinden OpenMP'de yanlış paylaşım, çekişme ve bellek bant genişliği(memory bandwith) sınırlamaları nedeniyle performans sorunları yaşayabilir.
-
-Python'da OpenMP benzeri paralel programlama yeteneklerine erişmek için, CPython yani Python'ın C dili tabanlı uygulaması ile uyumlu olan **"Numba"** gibi kütüphaneleri kullanabilirsiniz. 
-
-
-
-
-
-=====================================================
-Numba
-=====================================================
-
-
-Numba, Python programlarını otomatik olarak hızlandırmak için kullanılan bir Just-In-Time (JIT) derleme kütüphanesidir. Numba, özellikle hesaplamalı kodları hızlandırmak için tasarlanmıştır. Python kodunu C benzeri yüksek hızlı makine koduna dönüştürerek işlemci hızından faydalanmanıza olanak tanır. Numba, özellikle büyük diziler üzerindeki işlemleri hızlandırmak için kullanışlıdır ve genellikle numpy dizileri ile birlikte kullanılır.
-
-.. note:: 
-    JIT bir programın yürütülmesi sırasında yapılan derlemedir.
-    Yani, yürütme öncesinde değil, çalışma zamanında makine koduna çeviri gerçekleşir.
-    Derleme işlemi çalışma zamanında gerçekleştiğinden, geleneksel derleyicilere göre daha fazla optimizasyon imkanı sunar.
-
-.. tabs::
-
-    .. tab:: numba_python.py
-    .. code-block:: python
-
-        from numba import njit,prange
-        import numpy as np
-        import time
-
-       #ikinci çalıştırmada @njit decaratorünü kullanarak JIT derleyicisi ile çalışır. 
-        @njit(parallel=True)
-        def func(x, y):
-            return x + y
-
-        x = 0.01 * np.arange(1000000).reshape((1000,1000))
-        y = 0.02 * np.arange(1000000).reshape((1000,1000))
-
-        #Sıradan derlenmiş kod yavaş çalışacaktır.
-        start = time.time()
-        z1 = func(x, y)
-        end = time.time()
-        print("İlk fonksiyonun çalışması " + str(end - start) + " saniye aldı.")
-
-        # Numba sayesinde JIT derleyicisini kullanarak daha hızlı çalışan bir kod elde edilir.
-        start = time.time()
-        z2 = func(x, y)
-        end = time.time()
-        print("İkinci fonksiyonun çalışması " + str(end - start) + " saniye aldı.")
-
-.. _OpenMPI:
-
-=====================================================
-OpenMPI
-=====================================================
-
-
-MPI, paralel hesaplama ortamında işlemler arasındaki iletişimi ve koordinasyonu sağlamak için yaygın olarak kullanılan bir standarttır. OpenMPI ise paralel işlemleri yönetmek için kullanılan bir MPI aracıdır. Bu paralel işlemler paylaşılan bir bellek üzerinde olmadığı için iletişim kurmaları gerekir. MPI protokolleri tam olarak burada işimize yarar.
-Bu iletişimde olma hali bazen karmaşıklık yaratabileceği için ağ özelliklerine dikkat edilmelidir. Ağ özellikleri programın performansını etkileyebilir. 
-Daha fazla bilgi için `<https://docs.truba.gov.tr/education/openmpi/index.html>`_  adresini ziyaret edebilirsiniz.
-
-.. note:: 
-    MPI ve paylaşılan bellek paralelliği aynı uygulama tarafından yapıldığında buna genellikle hibrit paralelleştirme denir. Bu modeli kullanan programlar hem birden fazla görev hem de görev başına birden fazla çekirdek gerektirebilir.
-
-.. _mpi4py:
-
-=====================================================
-mpi4py
-=====================================================
-
-
-mpi4py, paralel ve dağıtık hesaplama için Message Passing Interface (MPI) standardına yönelik bir Python kütüphanesidir. 
-
-1. Conda ortamımızı aktifleştirerek başlarız. 
-   
-   .. code-block:: 
-
-    eval "$(/truba/sw/centos7.9/lib/anaconda3/2021.11/bin/conda shell.bash hook)"
-
-2. Daha sonra mpi4py çalışmalarımız için bir environment oluştururuz.
-   
-   .. code-block:: 
-
-    conda create --name fast-mpi4py python=3.8 -y
-
-3. Ortamımızı aktifleştiririz.
-   
-   .. code-block:: 
-
-    conda activate fast-mpi4py
-
-   
-
-4. .. code-block:: 
-   
-    pip install mpi4py --no-cache-dir
- 
-   yazarak yükleme işlemimizi tamamlarız.
-
-.. tabs::
-
-    .. group-tab:: hello_mpi.py
-
-        .. code-block:: python
-
-            from mpi4py import MPI
-            import sys
-
-            def print_hello(rank, size, name):
-                msg = "Hello World, I am process {0} of {1} on {2}.\n"
-                sys.stdout.write(msg.format(rank,size,name))
-
-            if __name__ == "__main__":
-                size = MPI.COMM_WORLD.Get_size()
-                rank = MPI.COMM_WORLD.Get_rank()
-                name = MPI.Get_processor_name()
-
-            print_hello(rank,size,name)
-
-    .. group-tab:: hello_mpi.slurm
-
-        .. code-block:: bash
-
-            #!/bin/bash
-            #SBATCH -p barbun             #İşin çalıştırılacağı kuyruk adı
-            #SBATCH -N 1                  #n adet taskın başlatılacağı node sayısı
-            #SBATCH -n 4                  #başlatılacak görev sayısı
-            #SBATCH -A {kullanıcı_adı}    #İşi kuyruğa gönderen kullanıcını ismi
-            #SBATCH -o hello_mpi          #çıktıların yazılacağı dosya ismi
-            #SBATCH -J hello_mpi          #İşin kuyrukta görülecek adı
-
-            eval "$(/truba/sw/centos7.9/lib/anaconda3/2021.11/bin/conda shell.bash hook)"
-            conda activate fast-mpi4py
-            module purge
-            module load centos7.9/lib/openmpi/4.1.5-gcc-7
-            mpirun -np 4 python3 hello_mpi.py
-    .. group-tab:: Çıktı
-        - Hello World, I am process 0 of 4 on barbun44.yonetim.
-        - Hello World, I am process 1 of 4 on barbun44.yonetim.
-        - Hello World, I am process 2 of 4 on barbun44.yonetim.
-        - Hello World, I am process 3 of 4 on barbun44.yonetim.
-
-.. image:: https://blogonparallelcomputing.files.wordpress.com/2017/04/launchmpi1.png
-    :width: 600px
-    :align: center
-*https://blogonparallelcomputing.files.wordpress.com/2017/04/launchmpi1.png*
-
-
 .. _Çoklu işleme(Multiprocessing):
 
 =====================================================
@@ -388,3 +233,422 @@ Pool Ornek 1 açıklaması:
 #.   Bu sonuçlar, ``multiple_results`` listesinde toplanır. ``res.get(timeout=1)`` AsyncResult nesnesinden sonucu alırken 1 saniye içersinde sonuç gelmezse Timeout Error hatası alınacağını gösterir.
   
 
+
+.. _OpenMP:
+
+=====================================================
+OpenMP
+=====================================================
+
+OPENMP bir bilgisayardaki iş parçacığı sisteminde çalışabilen bir kod oluşturmak için kullanılan bir paralel programlama modelidir. 
+Paylaşımlı bellek işlemcileri için taşınabilir ve ölçeklenebilir bir programlama modeli sunar. İlk amacı döngüleri parallelleştirmek ve indirgemeler yapmaktır.
+İş parçacıkları aynı kaynaklar için rekabet edip aynı verileri güncellediklerinden OpenMP'de yanlış paylaşım, çekişme ve bellek bant genişliği(memory bandwith) sınırlamaları nedeniyle performans sorunları yaşayabilir.
+
+Python'da OpenMP benzeri paralel programlama yeteneklerine erişmek için, CPython yani Python'ın C dili tabanlı uygulaması ile uyumlu olan **"Numba"** gibi kütüphaneleri kullanabilirsiniz. 
+
+Paylaşımlı bellek sistemleri : 
+
+.. image:: https://nyu-cds.github.io/python-mpi/fig/01-shared-mem.png
+    
+
+
+
+=====================================================
+Numba
+=====================================================
+
+
+Numba, Python programlarını otomatik olarak hızlandırmak için kullanılan bir Just-In-Time (JIT) derleme kütüphanesidir. Numba, özellikle hesaplamalı kodları hızlandırmak için tasarlanmıştır. Python kodunu C benzeri yüksek hızlı makine koduna dönüştürerek işlemci hızından faydalanmanıza olanak tanır. Numba, özellikle büyük diziler üzerindeki işlemleri hızlandırmak için kullanışlıdır ve genellikle numpy dizileri ile birlikte kullanılır.
+
+.. note:: 
+    JIT bir programın yürütülmesi sırasında yapılan derlemedir.
+    Yani, yürütme öncesinde değil, çalışma zamanında makine koduna çeviri gerçekleşir.
+    Derleme işlemi çalışma zamanında gerçekleştiğinden, geleneksel derleyicilere göre daha fazla optimizasyon imkanı sunar.
+
+.. tabs::
+
+    .. tab:: numba_python.py
+    .. code-block:: python
+
+        from numba import njit,prange
+        import numpy as np
+        import time
+
+       #ikinci çalıştırmada @njit decaratorünü kullanarak JIT derleyicisi ile çalışır. 
+        @njit(parallel=True)
+        def func(x, y):
+            return x + y
+
+        x = 0.01 * np.arange(1000000).reshape((1000,1000))
+        y = 0.02 * np.arange(1000000).reshape((1000,1000))
+
+        #Sıradan derlenmiş kod yavaş çalışacaktır.
+        start = time.time()
+        z1 = func(x, y)
+        end = time.time()
+        print("İlk fonksiyonun çalışması " + str(end - start) + " saniye aldı.")
+
+        # Numba sayesinde JIT derleyicisini kullanarak daha hızlı çalışan bir kod elde edilir.
+        start = time.time()
+        z2 = func(x, y)
+        end = time.time()
+        print("İkinci fonksiyonun çalışması " + str(end - start) + " saniye aldı.")
+
+.. _OpenMPI:
+
+=====================================================
+OpenMPI
+=====================================================
+
+
+MPI, paralel hesaplama ortamında işlemler arasındaki iletişimi ve koordinasyonu sağlamak için yaygın olarak kullanılan bir standarttır. OpenMPI ise paralel işlemleri yönetmek için kullanılan bir MPI aracıdır. Bu paralel işlemler paylaşılan bir bellek üzerinde olmadığı için iletişim kurmaları gerekir. MPI protokolleri tam olarak burada işimize yarar.
+Bu iletişimde olma hali bazen karmaşıklık yaratabileceği için ağ özelliklerine dikkat edilmelidir. Ağ özellikleri programın performansını etkileyebilir. 
+Daha fazla bilgi için `<https://docs.truba.gov.tr/education/openmpi/index.html>`_  adresini ziyaret edebilirsiniz.
+
+.. note:: 
+    MPI ve paylaşılan bellek paralelliği aynı uygulama tarafından yapıldığında buna genellikle hibrit paralelleştirme denir. Bu modeli kullanan programlar hem birden fazla görev hem de görev başına birden fazla çekirdek gerektirebilir.
+
+.. _mpi4py:
+
+=====================================================
+mpi4py
+=====================================================
+
+
+mpi4py, paralel ve dağıtık hesaplama için Message Passing Interface (MPI) standardına yönelik bir Python kütüphanesidir. 
+
+1. Conda ortamımızı aktifleştirerek başlarız. 
+   
+   .. code-block:: 
+
+    eval "$(/truba/sw/centos7.9/lib/anaconda3/2021.11/bin/conda shell.bash hook)"
+
+2. Daha sonra mpi4py çalışmalarımız için bir environment oluştururuz.
+   
+   .. code-block:: 
+
+    conda create --name fast-mpi4py python=3.8 -y
+
+3. Ortamımızı aktifleştiririz.
+   
+   .. code-block:: 
+
+    conda activate fast-mpi4py
+
+   
+
+4. .. code-block:: 
+   
+    pip install mpi4py --no-cache-dir
+ 
+   yazarak yükleme işlemimizi tamamlarız.
+
+.. tabs::
+
+    .. group-tab:: hello_mpi.py
+
+        .. code-block:: python
+
+            from mpi4py import MPI
+            import sys
+
+            def print_hello(rank, size, name):
+                msg = "Hello World, I am process {0} of {1} on {2}.\n"
+                sys.stdout.write(msg.format(rank,size,name))
+
+            if __name__ == "__main__":
+                size = MPI.COMM_WORLD.Get_size()
+                rank = MPI.COMM_WORLD.Get_rank()
+                name = MPI.Get_processor_name()
+
+            print_hello(rank,size,name)
+
+    .. group-tab:: hello_mpi.slurm
+
+        .. code-block:: bash
+
+            #!/bin/bash
+            #SBATCH -p barbun             #İşin çalıştırılacağı kuyruk adı
+            #SBATCH -N 1                  #n adet taskın başlatılacağı node sayısı
+            #SBATCH -n 4                  #başlatılacak görev sayısı
+            #SBATCH -A {kullanıcı_adı}    #İşi kuyruğa gönderen kullanıcını ismi
+            #SBATCH -o hello_mpi          #çıktıların yazılacağı dosya ismi
+            #SBATCH -J hello_mpi          #İşin kuyrukta görülecek adı
+
+            eval "$(/truba/sw/centos7.9/lib/anaconda3/2021.11/bin/conda shell.bash hook)"
+            conda activate fast-mpi4py
+            module purge
+            module load centos7.9/lib/openmpi/4.1.5-gcc-7
+            mpirun -np 4 python3 hello_mpi.py
+    .. group-tab:: Çıktı
+        - Hello World, I am process 0 of 4 on barbun44.yonetim.
+        - Hello World, I am process 1 of 4 on barbun44.yonetim.
+        - Hello World, I am process 2 of 4 on barbun44.yonetim.
+        - Hello World, I am process 3 of 4 on barbun44.yonetim.
+
+.. image:: https://blogonparallelcomputing.files.wordpress.com/2017/04/launchmpi1.png
+    :width: 600px
+    :align: center
+*https://blogonparallelcomputing.files.wordpress.com/2017/04/launchmpi1.png*
+
+++++++++++++++++++
+OPENMPI VS OPENMP
+++++++++++++++++++
+
+- OPENMP ile program yazmak ve hata ayıklamak daha kolaydır.
+- OpenMP paylaşımlı belleklerde çalışabilirken OPENMPI hem paylaşımlı hem dağıtık belleklerde çalışabilir.
+- MPI Seri sürümden paralel sürüme geçmek için daha fazla programlama değişikliği gerektirir, OPENMP ise programda modifikasyona çok ihtiyaç duymaz.
+- OpenMPI dağıtık sistemlerde çalışırken düğümler arasındaki iletişim ağı performansı sınırlayabilir. OpenMP ise iletişimi paylaşımlı bellek içerisinde yaptığı için, bu iletişim performansı etkilemez.
+
+
+
+
+.. image:: /assets/python-howto/images/integrated.png
+    :width: 250px
+    :height: 100px
+    :align: center
+
+İfadesinin integralini farklı örneklerle alıp, harcanan sürenin farkını aşağıdaki gibi gözlemleyebiliriz.
+
+.. tabs:: 
+    .. group-tab:: serial_example.py
+
+        .. code-block:: python
+
+                import math
+                from time import perf_counter
+
+                def f(x, y):
+                return x * y
+
+                def integrate_2d(f, x_min, x_max, y_min, y_max, n):
+                
+                dx = (x_max - x_min) / n
+                dy = (y_max - y_min) / n
+
+                integral = 0.0
+                for i in range(n):
+                    for j in range(n):
+                    x = x_min + i * dx
+                    y = y_min + j * dy
+                    integral += f(x,y) * dx * dy
+
+                return integral
+
+
+                if __name__ == "__main__":
+                start=perf_counter() 
+                integral = integrate_2d(f,0,math.pi,0,math.pi,10000)
+                end=perf_counter()
+
+                print("Harcanan sure : ", (end-start))
+                print("Integral degeri: ", integral) 
+
+        .. code-block:: output
+                
+                Harcanan sure :  28.698472655989463
+                Integral degeri:  24.347402547472264
+    .. group-tab:: serial_with_numba.py
+
+        .. code-block:: python
+
+            import math
+            from time import perf_counter
+            from numba import njit 
+
+            @njit
+            def integrate_2d(x_min, x_max, y_min, y_max, n):
+
+                dx = (x_max-x_min) / float(n)
+                dy = (y_max-y_min) / float(n)
+
+                integral = 0.0
+                for i in range(n):
+                    for j in range(n):
+                        x = (x_min + i) * dx
+                        y = (y_min + j) * dy
+                        integral += x*y * dx * dy
+
+                return integral
+
+            if __name__ == "__main__":
+            start=perf_counter()
+            integral= integrate_2d(0, math.pi, 0, math.pi, 10000)
+            end=perf_counter()
+
+            print("Harcanan sure :" , (end-start))
+            print("Integral degeri:", integral)
+
+        .. code-block:: output
+
+            Harcanan sure : 0.6155008749919944
+            Integral degeri: 24.347402547472264
+
+
+    .. group-tab:: threading.py
+        
+        .. code-block:: python
+
+            import threading
+            import math
+            from time import perf_counter
+
+            def f(x, y):
+                return x * y
+
+            numthreads = 4
+            partial_integrals = [None] * numthreads
+
+            def integrate_2d_threading(f, x_min, x_max, y_min, y_max, n, numthreads, threadindex):
+                global partial_integrals
+
+                dx = (x_max - x_min) / float(n)
+                dy = (y_max - y_min) / float(n)
+
+                integral = 0.0
+                workload = n / numthreads
+                begin = int(workload * threadindex)
+                end = int(workload * (threadindex + 1))
+               
+                for i in range(begin, end):
+                    for j in range(n):
+                        x = (x_min + i) * dx
+                        y = (y_min + j) * dy
+                        integral += f(x, y) * dx * dy
+
+                partial_integrals[threadindex] = integral 
+                
+                return partial_integrals
+
+            if __name__ == "__main__":
+                start = perf_counter()
+                threads = []
+
+                for i in range(numthreads):
+                    t = threading.Thread(target=integrate_2d_threading, args=(f, 0, math.pi, 0, math.pi, 10000, 4, i))
+                    threads.append(t)
+                    t.start()
+
+                for t in threads:
+                    t.join()
+
+                integral = sum(partial_integrals)
+                end = perf_counter()
+
+                print("Harcanan sure:", (end - start))
+                print("Integral degeri:", integral)    
+
+        .. code-block:: output
+
+            Harcanan sure: 9.187280416954309
+            Integral degeri: 24.347402547473603
+
+
+    .. group-tab:: multiprocessing.py
+        
+        .. code-block:: python
+           
+            import math
+            from time import perf_counter
+            import multiprocessing
+            from multiprocessing import Array
+
+
+            def f(x, y):
+            return x * y
+            numprocess = 4
+            partial_integrals = Array('d',[0]*numprocess, lock=False)
+
+            def integrate_2d_multiprocess(f, x_min, x_max, y_min, y_max, n,numprocess,processindex):
+                global partial_integrals;
+                h = math.pi / float(n)
+
+
+                integral = 0.0
+                workload= n/numprocess
+                begin = int(workload*processindex)
+            end= int(workload*(processindex+1))
+
+            for i in range(begin,end):
+                for j in range(n):
+                x = (x_min + i) * h
+                y = (y_min + j) * h
+                integral += f(x,y)*h*h
+            partial_integrals[processindex]= integral
+            return partial_integrals
+
+            if __name__ == "__main__":
+                start=perf_counter()
+                process = []
+                for i in range(numprocess):
+                    p= multiprocessing.Process(target=integrate_2d_multiprocess, args=(f,0,math.pi,0,math.pi,10000,4,i))
+                    process.append(p)
+                    p.start()
+
+                for p in process:
+                    p.join()
+                integral = sum(partial_integrals)
+                end=perf_counter()
+
+                print("Harcanan sure: ", (end-start))
+                print("Integral degeri: ", integral)
+
+        .. code-block:: output
+               
+                Harcanan sure:  8.090660422982182
+                Integral degeri:  24.347402547473603
+
+
+    .. group-tab::  mpi_example.py
+        .. code-block:: python
+
+            import math
+            from time import perf_counter
+            from mpi4py import MPI
+
+            comm = MPI.COMM_WORLD
+            nprocs = comm.Get_size()
+            myrank = comm.Get_rank()
+
+
+            def f(x,y):
+            
+                return x*y 
+
+            def integrate_2d_mpi(f,x_min, x_max, y_min, y_max, n,nprocs,myrank):
+            
+                dx = (x_max-x_min) / float(n)
+                dy = (y_max-y_min) / float(n)	
+
+
+                sum = 0.0
+                workload= n/nprocs
+                begin = int(workload*myrank)
+                end= int(workload*(myrank+1))
+
+                for i in range(begin,end):
+                    for j in range(n):
+                        x = (x_min + i) * dx
+                        y = (y_min + j) * dy
+                        sum += f(x,y) * dx * dy
+                partial_integrals =  sum
+                return partial_integrals
+
+            if __name__ == "__main__":
+                start=perf_counter()
+                
+
+                p= integrate_2d_mpi(f,0,math.pi,0,math.pi,10000,nprocs,myrank)
+                print("nprocs {},my rank {}".format(nprocs,myrank))
+                integral = comm.reduce(p, op=MPI.SUM, root=0)
+                
+                end=perf_counter()
+                if myrank == 0:
+                print("Harcanan sure: ", (end-start))
+                print("Integral degeri: ", integral)
+
+
+        .. code-block:: output
+
+               Harcanan sure:  29.042699493002146
+               Integral degeri:  24.347402547472264
