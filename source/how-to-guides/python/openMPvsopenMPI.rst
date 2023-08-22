@@ -14,14 +14,15 @@ Birçok modern bilgisayar ve işlemci, çoklu çekirdekli yapılara sahiptir. Bu
 
 .. grid:: 4
 
+    .. grid-item-card:: :ref:`Çoklu işleme(Multiprocessing)`
+        :text-align: center
     .. grid-item-card::  :ref:`OpenMP`
         :text-align: center
     .. grid-item-card:: :ref:`OPENMPI`
         :text-align: center
     .. grid-item-card:: :ref:`mpi4py`
         :text-align: center
-    .. grid-item-card:: :ref:`Çoklu işleme(Multiprocessing)`
-        :text-align: center
+    
   
 .. figure:: /assets/python-howto/images/paralellism.png
  :width: 400px
@@ -42,16 +43,10 @@ Birden fazla işlemi aynı anda yapmak anlamına gelir. Yapılan işleri farklı
 
     Çoklu işleme(multiprocessing) ve çoklu iş parçacağı(multithreading) kavramlarını karıştırmamak gerekir.
     Modern CPU'lar birden fazla çekirdeğe sahiptir; işlemleri paralel olarak çalıştırmak istediğimizde bu çekirdekleri 
-    kullanırız. Çoklu işleme(multiprocessing) tam olarak burada işimize yarar. Ancak çoklu iş parçacığı, aynı anda birden fazla iş parçacağı(threads)
+    kullanırız. Çoklu işleme(multiprocessing) tam olarak burada işimize yarar. Ancak çoklu iş parçacığı, aynı anda birden fazla iş parçacağını(threads) tek işlemde
     çalıştırır ve çekirdeklerin her birinden en üst düzeyde verim almayı amaçlar.
 
-Eşzamanlılık(Concurrency) ve Parallelizm arasındaki fark : Eş zamanlılık birden fazla işlemi aynı zaman dilimi içerisinde gerçekleştirmek demektir. Parallelism ise birden fazla işlemin(processin) aynı anda gerçekleşmesi demektir.  Bir işlemi paralel olarak çalıştırmak, bir işi aynı anda işlenebilecek birkaç küçük parçaya bölebilir. 
 
-.. image:: /assets/python-howto/images/concvsparalel.jpg
-    :align: center
-    
-
-*https://techdifferences.com/difference-between-concurrency-and-parallelism.html*    
 
 
 +++++++++
@@ -104,9 +99,6 @@ Temel amacı, verilen görevi birden fazla işlem arasında paylaştırarak işl
                     except TimeoutError:
                         print("Bir adet çoklu işlem var. Timeout Error.")
 
-                    print("Pool daha fazla işlemi çalıştırmak için müsait.")
-                
-                print("Pool kapandı ve müsait değil.")
  
     .. tab:: pool_ornek1.slurm
         .. code-block:: bash
@@ -120,7 +112,7 @@ Temel amacı, verilen görevi birden fazla işlem arasında paylaştırarak işl
             #SBATCH -J pool1_ornek
             #SBATCH -A {kullanıcı_adı}
             #SBATCH --time=02-00:00
-            #SBATCH -o pool1_ornek.out
+            #SBATCH -o pool_ornek1
 
             module purge
             module load centos7.9/comp/gcc/7
@@ -130,7 +122,7 @@ Temel amacı, verilen görevi birden fazla işlem arasında paylaştırarak işl
 
 
 
-    .. tab:: pool_ornek1 çıktı
+    .. tab:: pool_ornek1.out
         
         .. code-block:: text
 
@@ -149,9 +141,7 @@ Temel amacı, verilen görevi birden fazla işlem arasında paylaştırarak işl
             400
             27523
             [27527, 27526, 27522, 27523]
-            We lacked patience and got a multiprocessing.TimeoutError
-            For the moment, the pool remains available for more work
-            Now the pool is closed and no longer available
+            Bir adet çoklu işlem var. Timeout Error.
 
     .. tab:: pool_ornek2.py
 
@@ -205,7 +195,7 @@ Temel amacı, verilen görevi birden fazla işlem arasında paylaştırarak işl
             echo "NUMBER OF CORES $SLURM_NTASKS
             srun python3 file3.py
 
-    .. tab:: pool_ornek2 çıktı
+    .. tab:: pool_ornek2.out
         
         .. code-block:: bash
         
@@ -227,7 +217,7 @@ Temel amacı, verilen görevi birden fazla işlem arasında paylaştırarak işl
 Pool Ornek 1 açıklaması:
 
 #. ``Pool(processes=4)``  Pool sınıfını kullanarak bir işlem havuzu oluşturuyoruz ve bu işlem havuzunu bir `with` bloğu içinde yönetiyoruz. Bu işlem havuzunda aynı anda en fazla 4 işlem çalıştırılabilir.
-#. ``pool.map()`` fonksiyonu , işlem havuzundaki işlemlere belirli bir fonksiyonu paralel olarak uygular. 
+#. ``pool.map()`` fonksiyonu , işlem havuzundaki işlemlere belirli bir fonksiyonu eşzamanlı olarak uygular. 
 #.   ``imap_unordered`` yöntemi her bir sayıyı işlem havuzundaki işleme sırayla verir ve sonuçları sıraya koymadan döndürür.    Bu, işlemler bitene kadar beklemek yerine, işlemler paralel olarak tamamlandıkça sonuçları elde etmenize olanak tanır.
 #.   ``pool.apply_async(os.getpid, ())`` ifadesi işlem havuzundaki bir işlemi paralel olarak başlatır ve sonucunu almak için AsyncResult nesnesini döndürür. Sonucu elde ettiğinizde, bu nesne, işlemin yürütülmesi sırasında elde edilen işlem kimliğini (PID) içerecektir.
 #.   Bu sonuçlar, ``multiple_results`` listesinde toplanır. ``res.get(timeout=1)`` AsyncResult nesnesinden sonucu alırken 1 saniye içersinde sonuç gelmezse Timeout Error hatası alınacağını gösterir.
@@ -249,7 +239,8 @@ Python'da OpenMP benzeri paralel programlama yeteneklerine erişmek için, CPyth
 Paylaşımlı bellek sistemleri : 
 
 .. image:: https://nyu-cds.github.io/python-mpi/fig/01-shared-mem.png
-    
+    :align: center
+*https://nyu-cds.github.io/python-mpi/fig/01-shared-mem.png*
 
 
 
@@ -267,32 +258,63 @@ Numba, Python programlarını otomatik olarak hızlandırmak için kullanılan b
 
 .. tabs::
 
-    .. tab:: numba_python.py
-    .. code-block:: python
+    .. group-tab:: numba_python.py
 
-        from numba import njit,prange
-        import numpy as np
-        import time
+            .. code-block:: python
 
-       #ikinci çalıştırmada @njit decaratorünü kullanarak JIT derleyicisi ile çalışır. 
-        @njit(parallel=True)
-        def func(x, y):
-            return x + y
+                from numba import njit,prange
+                import numpy as np
+                import time
 
-        x = 0.01 * np.arange(1000000).reshape((1000,1000))
-        y = 0.02 * np.arange(1000000).reshape((1000,1000))
+                #ikinci çalıştırmada @njit decaratorünü kullanarak JIT derleyicisi ile çalışır. 
+                @njit(parallel=True)
+                def func(x, y):
+                    return x + y
 
-        #Sıradan derlenmiş kod yavaş çalışacaktır.
-        start = time.time()
-        z1 = func(x, y)
-        end = time.time()
-        print("İlk fonksiyonun çalışması " + str(end - start) + " saniye aldı.")
+                x = 0.01 * np.arange(1000000).reshape((1000,1000))
+                y = 0.02 * np.arange(1000000).reshape((1000,1000))
 
-        # Numba sayesinde JIT derleyicisini kullanarak daha hızlı çalışan bir kod elde edilir.
-        start = time.time()
-        z2 = func(x, y)
-        end = time.time()
-        print("İkinci fonksiyonun çalışması " + str(end - start) + " saniye aldı.")
+                #Sıradan derlenmiş kod yavaş çalışacaktır.
+                start = time.time()
+                z1 = func(x, y)
+                end = time.time()
+                print("İlk fonksiyonun çalışması " + str(end - start) + " saniye aldı.")
+
+                # Numba sayesinde JIT derleyicisini kullanarak daha hızlı çalışan bir kod elde edilir.
+                start = time.time()
+                z2 = func(x, y)
+                end = time.time()
+                print("İkinci fonksiyonun çalışması " + str(end - start) + " saniye aldı.")
+
+    .. group-tab:: numba_python.slurm
+        
+        .. code-block:: bash
+
+            #!/bin/bash
+            #SBATCH -p barbun 
+            #SBATCH -N 1
+            #SBATCH -n 4
+            #SBATCH -A {kulllanıcı_adı}
+            #SBATCH -o numba_deneme.out
+            #SBATCH -J numba_deneme
+
+
+            eval "$(/truba/sw/centos7.9/lib/anaconda3/2021.11/bin/conda shell.bash hook)"
+            conda activate numba_deneme
+
+            srun python numba_deneme.py
+
+    .. group-tab:: numba_python.out
+
+        - Ilk fonksiyonun calismasi 0.9587094783782959 saniye aldi.
+        - Ikinci fonksiyonun calisması 0.0076372623443603516 saniye aldi. 
+        - Ilk fonksiyonun calismasi 0.9604973793029785 saniye aldi.
+        - Ikinci fonksiyonun calisması 0.00766754150390625 saniye aldi. 
+        - Ilk fonksiyonun calismasi 0.9557361602783203 saniye aldi.
+        - Ikinci fonksiyonun calisması 0.007283210754394531 saniye aldi.
+        - Ilk fonksiyonun calismasi 0.9614343643188477 saniye aldi.
+        - Ikinci fonksiyonun calisması 0.007330894470214844 saniye aldi.
+
 
 .. _OpenMPI:
 
@@ -380,11 +402,37 @@ mpi4py, paralel ve dağıtık hesaplama için Message Passing Interface (MPI) st
             module purge
             module load centos7.9/lib/openmpi/4.1.5-gcc-7
             mpirun -np 4 python3 hello_mpi.py
-    .. group-tab:: Çıktı
+
+    .. group-tab:: hello_mpi2.slurm
+
+        .. code-block:: bash
+
+            #!/bin/bash
+            #SBATCH -p barbun             #İşin çalıştırılacağı kuyruk adı
+            #SBATCH -N 4                  #n adet taskın başlatılacağı node sayısı
+            #SBATCH -n 4                  #başlatılacak görev sayısı
+            #SBATCH -A {kullanıcı_adı}    #İşi kuyruğa gönderen kullanıcını ismi
+            #SBATCH -o hello_mpi2          #çıktıların yazılacağı dosya ismi
+            #SBATCH -J hello_mpi2          #İşin kuyrukta görülecek adı
+
+            eval "$(/truba/sw/centos7.9/lib/anaconda3/2021.11/bin/conda shell.bash hook)"
+            conda activate fast-mpi4py
+            module purge
+            module load centos7.9/lib/openmpi/4.1.5-gcc-7
+            mpirun -np 4 python3 hello_mpi.py
+
+
+    .. group-tab:: hello_mpi.out
         - Hello World, I am process 0 of 4 on barbun44.yonetim.
         - Hello World, I am process 1 of 4 on barbun44.yonetim.
         - Hello World, I am process 2 of 4 on barbun44.yonetim.
         - Hello World, I am process 3 of 4 on barbun44.yonetim.
+
+    .. group-tab:: hello_mpi2.out
+        - Hello World, I am process 3 of 4 on barbun51.yonetim.
+        - Hello World, I am process 1 of 4 on barbun10.yonetim.
+        - Hello World, I am process 2 of 4 on barbun50.yonetim.
+        - Hello World, I am process 0 of 4 on barbun9.yonetim.
 
 .. image:: https://blogonparallelcomputing.files.wordpress.com/2017/04/launchmpi1.png
     :width: 600px
@@ -398,7 +446,7 @@ OPENMPI VS OPENMP
 - OPENMP ile program yazmak ve hata ayıklamak daha kolaydır.
 - OpenMP paylaşımlı belleklerde çalışabilirken OPENMPI hem paylaşımlı hem dağıtık belleklerde çalışabilir.
 - MPI Seri sürümden paralel sürüme geçmek için daha fazla programlama değişikliği gerektirir, OPENMP ise programda modifikasyona çok ihtiyaç duymaz.
-- OpenMPI dağıtık sistemlerde çalışırken düğümler arasındaki iletişim ağı performansı sınırlayabilir. OpenMP ise iletişimi paylaşımlı bellek içerisinde yaptığı için, bu iletişim performansı etkilemez.
+- OpenMPI'da dağıtık sistemlerde çalışırken düğümler arasındaki iletişim ağı performansı sınırlayabilir. OpenMP'de ise iletişim paylaşımlı bellek içerisinde yapıldığı için, bu iletişim performansı etkilemez.
 
 
 
@@ -650,5 +698,5 @@ OPENMPI VS OPENMP
 
         .. code-block:: output
 
-               Harcanan sure:  29.042699493002146
+               Harcanan sure:  5.541638394002803
                Integral degeri:  24.347402547472264
