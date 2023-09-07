@@ -27,7 +27,22 @@ Sizin için uygun olan versiyonu seçtikten sonra
 .. code-block:: bash
   
   module load {seçilen modül}
-  
+
+kullanmak istediğiniz modülü yükleyebilirsiniz.
+
+Yüklediğiniz modülün versiyonunu varsayılan Python versiyonunuz yapmak için belirli komutlara ihtiyaç duyarsınız.
+Öncelikle izole bir çalışma alanı oluşturarak başlayabilirsiniz. Bunun için Python'da sanal ortam (virtual environment) oluşturabilirsiniz. Bunun için,
+
+.. code-block:: bash
+
+ virtualenv --python={yüklediğiniz modülün pathi} {sanal ortamınızın ismi}
+
+daha sonra bu sanal ortamı kullanabilmek için
+
+.. code-block:: bash
+ 
+ source virtualEnv/bin/activate
+
 komutu ile kolaylıkla Python kurulumunuzu gerçekleştirebilirsiniz. Fakat TRUBA'da bulunmayan bir versiyonla çalışmak istediğinizde aşağıdaki adımları izlemeniz gerekmektedir.
 
 ++++
