@@ -9,12 +9,19 @@ Aşağıdaki komutu terminalimizde çalıştırırız. Bu adım TRUBA sunucumuza
 
 ..  code-block:: bash
 
-  ssh -l [kullanıcı_adı]  [bağlanmak istediğimiz TRUBA sunucusu].ulakbim.gov.tr
+  ssh -l [kullanıcı_adı]  levrek1.ulakbim.gov.tr
 
 ++++++++++++++++++
 TRUBA Modüllerinden Python Kurulumu
 ++++++++++++++++++
 
+Sunucularda yoğunluğa sebep olmamak ve hesabınızın askıya alınmaması için paket kurulumlarınızı barbun1 arayüzünde gerçekleştirmeniz tavsiye ederiz.
+
+.. code-block:: bash
+
+  ssh barbun1
+
+komutunu terminalinize yazarak barbun1'e geçiş yapabilirsiniz.
 
 .. code-block:: bash
 
@@ -41,7 +48,7 @@ daha sonra bu sanal ortamı kullanabilmek için
 
 .. code-block:: bash
  
- source virtualEnv/bin/activate
+ source {sanal ortamınızın ismi}/bin/activate
 
 komutu ile kolaylıkla Python kurulumunuzu gerçekleştirebilirsiniz. Fakat TRUBA'da bulunmayan bir versiyonla çalışmak istediğinizde aşağıdaki adımları izlemeniz gerekmektedir.
 
