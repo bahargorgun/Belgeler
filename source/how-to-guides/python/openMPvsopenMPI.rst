@@ -3,188 +3,296 @@
 =====================================================
 Python'da Paralel Programlama
 =====================================================
-Paralelleştirme, bir görevin daha hızlı tamamlanabilmesi için aynı anda birden fazla işlemci veya işlem birimi kullanarak eş zamanlı olarak gerçekleştirilmesi sürecidir.
-Birçok modern bilgisayar ve işlemci, çoklu çekirdekli yapılara sahiptir. Bu, birden fazla işlemcinin aynı anda çalışabilmesi anlamına gelir. Paralelleştirme, bu çoklu işlemcilerin eş zamanlı olarak kullanılmasını sağlayarak işlem süresini kısaltabilir.
+Paralelleştirme, performansı artırmak ve hesaplamaları hızlandırmak amacıyla, birden fazla görevin aynı anda yürütülmesi sürecine denir. Büyük bir görevin, birden fazla işlemci, çekirdek veya farklı makinelerde eşzamanlı olarak çalıştırılabilecek daha küçük ve bağımsız alt görevlere bölünmesini içerir. 
+Bu sayede, işlemler daha verimli hale gelir ve toplam işlem süresi önemli ölçüde kısalabilir.
 
-.. note:: 
+.. warning:: 
+
     Python'da bulunan GIL (Global Interpreter Lock) birden fazla iş parçacığının paralel olarak ilerlemesini engeller. 
-    GIL, iş parçacığı güvenliği ve veri yarışları içeren kodlar yazmayı zorlaştırmak için işe yarar, ancak bunları yaparken Python'da paralel çoklu iş parçacığı ile çalışmayı önler.
-   
+    GIL, iş parçacığı güvenliği ve veri yarışları içeren kodlar yazmayı önlemek için işe yarar, ancak bunları yaparken Python'da paralel iş parçacıkları halinde çalışmayı önler. Bu yüzden Python'da paralel programlamadan yararlanırken belirli kütüphanelere ihtiyaç duyarız.
+    
 
 
-.. grid:: 4
+.. grid:: 3
 
     .. grid-item-card:: :ref:`Çoklu işleme(Multiprocessing)`
         :text-align: center
     .. grid-item-card::  :ref:`OpenMP`
         :text-align: center
-    .. grid-item-card:: :ref:`OPENMPI`
+    .. grid-item-card:: :ref:`OpenMPI`
         :text-align: center
-    .. grid-item-card:: :ref:`mpi4py`
-        :text-align: center
+   
     
   
 .. figure:: /assets/python-howto/images/paralellism.png
  :width: 400px
  :align: center
 
-*https://scicomp.aalto.fi/triton/tut/parallel/*
+`kaynakça <https://scicomp.aalto.fi/triton/tut/parallel/>`_
 
 .. _Çoklu işleme(Multiprocessing):
 
-=====================================================
+===============================
 Çoklu İşleme(Multiprocessing)
-=====================================================
+===============================
 
 
-Birden fazla işlemi aynı anda yapmak anlamına gelir. Yapılan işleri farklı çekirdekler üzerinde paylaştırmak iş yükünü dağıtacağı için daha hızlı çalışmayı sağlar.
+Multiprocessing (çoklu işlem), birden fazla işlemci çekirdeğinin veya işlemcinin aynı anda çalışabilmesi için kullanılan bir programlama yöntemidir. Bu paylaştırma işlemi, iş yükünü dağıtarak daha hızlı 
+çalışmayı sağlayabilir.
 
-.. note:: 
+..
+    .. note:: 
 
-    Çoklu işleme(multiprocessing) ve çoklu iş parçacağı(multithreading) kavramlarını karıştırmamak gerekir.
-    Modern CPU'lar birden fazla çekirdeğe sahiptir; işlemleri paralel olarak çalıştırmak istediğimizde bu çekirdekleri 
-    kullanırız. Çoklu işleme(multiprocessing) tam olarak burada işimize yarar. Ancak çoklu iş parçacığı, aynı anda birden fazla iş parçacağını(threads) tek işlemde
-    çalıştırır ve çekirdeklerin her birinden en üst düzeyde verim almayı amaçlar.
+    **Çoklu işlem (multiprocessing)** ve **çoklu iş parçacağı (multithreading)** kavramlarını karıştırmamak gerekir.
+    **Multiprocessing** (Çoklu İşlem), birden fazla bağımsız işlem başlatarak çalışır. Her işlem, kendi bellek alanına ve kendi Python interpreter'ına sahiptir. Yani ana process, birden fazla processe bölünerek gerçekleşir. Bu yöntem, CPU-bound (işlemci ağırlıklı) işlemler için uygundur.
+    **Multithreading** (Çoklu İş Parçacığı), aynı işlem içinde birden fazla iş parçacığı (thread) çalıştırır. Tüm iş parçacıkları, aynı bellek alanını paylaşır ve aynı Python interpreter'ını kullanır. Bu yöntem, I/O-bound (girdi/çıktı ağırlıklı) işlemler için uygundur.
 
-
-
-
-+++++++++
+===============================
 Python Multiprocessing Modülü
-+++++++++
+===============================
 
 **Pool sınıfı**
 
-Pool sınıfı, bir işlem havuzu oluşturmanıza ve birden fazla işlemi paralel olarak çalıştırmanıza olanak tanır.
-Temel amacı, verilen görevi birden fazla işlem arasında paylaştırarak işlemci çekirdeklerini etkin bir şekilde kullanmaktır. Bu, hesaplamalı yükleri azaltmak, çoklu işlemi paralel olarak gerçekleştirmek veya aynı işlemi farklı veriler üzerinde paralel olarak çalıştırmak gibi durumlarda faydalıdır.
+Pool sınıfı, belirtilen sayıda belirtilen sayıda işlemciden oluşan bir işlem havuzu oluşturulmasıyla başlar.
+Temel amacı, verilen görevi bu havuz içersinde paylaştırarak kaynakları etkin bir şekilde kullanmaktır.
 
+.. tabs::
+    .. tab:: Pooling (pooling_pid.py)
+
+        .. code-block:: python
+
+            from multiprocessing import Pool, current_process
+            import math
+
+            N = 6
+
+            def process_id(x):
+                # Hangi process ID'de çalıştığını gösterelim.
+                process_id = current_process().pid
+                print(f"Process ID: {process_id}, İşleniyor: {x}")
+                return process_id
+
+            if __name__ == "__main__":
+             
+                print("Multiprocessing ile yurutme basladi.") 
+
+                with Pool(processes=4) as pool:  # Process sayısı 4 olarak belirledik.
+                
+                    result = pool.map(process_id, range(1, N))
+            
+                print("Multiprocessing ile yürütme sona erdi.")
+                print("Seri yürütme başladı.")
+
+                result = []
+                for x in range(1, N):
+                    result.append(process_id(x))
+            
+                print("Seri yürütme sona erdi.") 
+
+    .. tab:: Pooling.sh
+        
+        .. code-block:: bash
+        
+            #!/bin/bash
+
+            #SBATCH -p barbun
+            #SBATCH -N 1
+            #SBATCH -n 1
+            #SBATCH -c 4
+            #SBATCH -J pooling_pid
+            #SBATCH -o pooling_pid.out
+            #SBATCH --time=00-05:00
+            #SBATCH -A kullanici_adi
+
+            eval "$(/truba/sw/centos7.9/lib/anaconda3/2023.03/bin/conda shell.bash hook)"
+
+            echo "SLURM_NODELIST $SLURM_NODELIST"
+            echo "NUMBER OF CORES $SLURM_NTASKS"
+            
+            srun python3 pooling_pid.py
+
+    .. tab:: Pooling Output
+        
+        .. code-block:: bash
+        
+            SLURM_NODELIST barbun52
+            NUMBER OF CORES 1
+            Multiprocessing ile yurutme basladi.
+            Process ID: 74280, İşleniyor: 2
+            Process ID: 74280, İşleniyor: 5
+            Process ID: 74282, İşleniyor: 3
+            Process ID: 74281, İşleniyor: 4
+            Process ID: 74279, İşleniyor: 1
+            Multiprocessing ile yürütme sona erdi.
+            Seri yürütme başladı.
+            Process ID: 74278, İşleniyor: 1
+            Process ID: 74278, İşleniyor: 2
+            Process ID: 74278, İşleniyor: 3
+            Process ID: 74278, İşleniyor: 4
+            Process ID: 74278, İşleniyor: 5
+            Seri yürütme sona erdi.
+
+
+
+#. ``Pool(processes=4)`` ifadesi ile 4 işlemli bir havuz (pool) oluşturulur. Bu işlem havuzu bir `with` bloğu içinde yönetilir. N = 6 belirleyerek (1,2,3,4,5) sayılarının processlere dağılmasını sağlıyoruz. 2 ve 5 sayılarının aynı processlerde yer almasının sebebi, paralelleştirme işlemi başlatılırken 4 adet process belirlememizdir. 
+
+
+.. code-block::
+    
+    sbatch pooling.sh
+
+sbatch komutunu kullanarak işi kuyruğa gönderebilirsiniz.
+
+#. ``pool.map()`` fonksiyonunun çok uzun veri yapıları için yüksek bellek kullanımına neden olabileceğini unutmayın. Daha iyi verimlilik için chunksize seçeneğiyle imap() kullanmayı tercih edebilirsiniz.
+  
 
 
 .. tabs::
 
     .. tab:: imap() vs imap_unordered()
         
-        .. code-block:: python3
+        .. code-block:: python
 
             
-            import multiprocessing
+            from multiprocessing import Pool
+            import time
 
-            def kare_al(x):
+            def square(x):
+                # Bir işlemin süresini simüle etmek için gecikme ekleyebiliriz.
+                time.sleep(0.5)
                 return x * x
 
-            liste = [1, 2, 3, 4, 5]
+            if __name__ == "__main__":
+                numbers = [1, 2, 3, 4, 5]
 
-            # `multiprocessing.Pool()` nesnesi kullanılarak `imap()` fonksiyonunun bir çıktısı alınır.
-            # Liste şeklinde alınmasının sebebi imap sonucunda "IMapIterator" nesnesi dönmesidir.
+                # Multiprocessing ile `imap` kullanarak
+                with Pool(processes=4) as pool:
+                    print("imap() sonuçları:")
+                    result_imap = pool.imap(square, numbers)
+                    for value in result_imap:
+                        print(value)  # Sonuçlar sıralı olarak döner ve tek tek alınır.
+                    
+                    print("\n")
 
-            with multiprocessing.Pool() as pool:
-                kareler = list(pool.imap(kare_al, liste))
+                # Multiprocessing ile `imap_unordered` kullanarak
+                with Pool(processes=4) as pool:
+                    print("imap_unordered() sonuçları:")
+                    result_imap_unordered = pool.imap_unordered(square, numbers)
+                    for value in result_imap_unordered:
+                        print(value)  # Sonuçlar sıraya göre döner (garanti edilmez)
 
-            print(kareler)
 
 
 
         .. code-block:: output
 
-                [1, 4, 9, 16, 25]
-
-        .. code-block:: python3
-            
-            import multiprocessing
-
-            def kare_al(x):
-                return x * x
+                imap() sonuçları:
+                1
+                4
+                9
+                16
+                25
 
 
-            def main():
-            # Listedeki her bir sayının karesini alır.
-            liste = [1, 2, 3, 4, 5]
-            kareler = []
+                imap_unordered() sonuçları:
+                4
+                1
+                16
+                9
+                25
 
-            # `imap_unordered()` fonksiyonunu kullanarak, `kare_al()` fonksiyonunu kullanarak bir listedeki her bir sayının karesini alır.
-            with multiprocessing.Pool() as pool:
-                kareler = pool.imap_unordered(kare_al, liste)
-
-            # Kareleri yazdırır.
-            for result in kareler:
-                print(result)
-
-        .. code-block:: output
-
-            [1, 4, 9, 25, 16]
+    
 
         .. note:: 
 
-             imap ile, sonuçlar hazır olur olmaz Iterator nesnesinden elde edilirken, girdilerin sıralaması korunur. imap_unordered ile sonuçlar, girdilerin sırası ne olursa olsun, hazır olur olmaz döndürülür.
-            
+            imap() ile, sonuçlar hazır olur olmaz Iterator nesnesinden elde edilirken girdilerin sıralaması korunur. imap_unordered() ile sonuçlar, girdilerin sırası ne olursa olsun, sonuç hazır olur olmaz döndürülür.
+            imap() ve imap_unordered() fonksiyonları map() fonksiyonlarına kıyasla çok büyük veri setleri ile çalışırken daha verimli olabilir çünkü veriler bir seferde yüklenmek yerine parça parça işlenir.
         
 
  
     .. tab:: map() vs map_async()
+
         .. code-block:: python
 
             import multiprocessing
 
+            from multiprocessing import Pool, current_process
+            import math
+
             def square(x):
-                return x * x
-
+                # Hangi process ID'de calistigini gösterir.
+                process_id = current_process().pid
+                result = x * x
+                print(f"Process ID: {process_id}, İ?~_leniyor: {x}, Sonuç: {result}")
+                return result
+            #map_async fonksiyonu callback fonksiyonu ile kullanılmaya elverişlidir. 
             def callback(result):
+                #callback fonksiyonu ana süreçte çalışır.
+                print("Callback fonksiyonunda sonuçlar:")
                 for r in result:
-                    print(r, multiprocessing.current_process().name)
+                    print(r, current_process().pid)
 
-            numbers = [1, 2, 3, 4, 5]
+            numbers = [1, 2, 3, 4]
 
-            # map_async kullanımı
-            print("map_async kullanımı:")
-            pool_async = multiprocessing.Pool(processes=2)
-            result_async = pool_async.map_async(square, numbers, callback=callback)
-            result_async.wait()
-            pool_async.close()
-            pool_async.join()
+            # map() kullanımı
+            with Pool(processes=4) as pool:
+                print("Map() fonksiyonu çıktıları")
+                result = pool.map(square, numbers)
+                print("Sonuc tipi :", type(result))
+                
 
-            # map kullanımı
-            print("\nmap kullanımı:")
-            pool_map = multiprocessing.Pool(processes=2)
-            result_map = pool_map.map(square, numbers)
-            pool_map.close()
-            pool_map.join()
+            # map_async() kullanımı
+            with Pool(processes=4) as pool:
+                print("Map_async() fonksiyonu çıktıları")
+                result_async = pool.map_async(square, numbers, callback=callback, chunksize=1)
+                
+                #Map_async fonksiyonu sonuç nesnesini üretmek için tüm işlemin tamamlanmasını bekler.
+                result_async.wait()
+                print("Sonuc tipi :", type(result_async))
 
-            # Sonuçları göster
-            print("\nMap_async Sonuçları:", result_async.get())
-            print("map Sonuçları:", result_map)
+
+            pool.close()
+            pool.join()
 
         .. code-block:: output
             
-            map_async kullanımı:
-            1 MainProcess
-            4 MainProcess
-            9 MainProcess
-            16 MainProcess
-            25 MainProcess
+            Map() fonksiyonu çıktıları
+            Process ID: 152936, İşleniyor: 1, Sonuç: 1
+            Process ID: 152937, İşleniyor: 2, Sonuç: 4
+            Process ID: 152938, İşleniyor: 3, Sonuç: 9
+            Process ID: 152939, İşleniyor: 4, Sonuç: 16
+            Sonuc tipi:  <class 'list'>
+            Map_async() fonksiyonu çıktıları
+            Process ID: 152943, İşleniyor: 1, Sonuç: 1
+            Process ID: 152944, İşleniyor: 2, Sonuç: 4
+            Process ID: 152946, İşleniyor: 4, Sonuç: 16
+            Process ID: 152945, İşleniyor: 3, Sonuç: 9
+            Callback fonksiyonunda sonuçlar:
+            1 152929
+            4 152929
+            9 152929
+            16 152929
+            Sonuc tipi:  <class 'multiprocessing.pool.MapResult'>
 
-            map kullanımı:
-
-            Map_async Sonuçları: [1, 4, 9, 16, 25]
-            map Sonuçları: [1, 4, 9, 16, 25]
-        
         .. note:: 
 
-            map_async() fonksiyonu bir AsyncResult döndürürken, map() fonksiyonu hedef fonksiyondan dönen değerlerin bir yinelenebilirini döndürür.
+            map_async() fonksiyonu bir AsyncResult döndürürken, map() fonksiyonu hedef fonksiyondan dönen değerlerin bir yinelenebilirini(recursive) döndürür.
             map_async() fonksiyonu geri dönüş değerleri ve hatalar üzerinde geri arama fonksiyonlarını çalıştırabilirken, map() fonksiyonu geri arama(callback) fonksiyonlarını desteklemez.
-            map_async() fonksiyonu, hedef görev fonksiyonlarını, görev yürütülürken çağıranın bloklanamayacağı veya bloklanmaması gereken süreç havuzuna vermek için kullanılmalıdır.
+            map_async() fonksiyonu, hedef görev fonksiyonlarını, görev yürütülürken çağıranın bloklanmaması gereken süreç havuzunda işlem yapmak için kullanılmalıdır.
+            #callbacki de açıkla, nasıl çalışıyor
 
-            map() işlevi, hedef görev işlevlerini, çağıranın tüm işlev çağrıları tamamlanana kadar engelleyebileceği veya engellemesi gereken işlem havuzuna vermek için kullanılmalıdır.
-
+            map() işlevi, hedef görev işlevlerini işlem havuzuna vererek, çağıranın tüm işlev çağrıları tamamlanana kadar engelleyebileceği veya engellemesi gereken işlemleri gerçekleştirmesini sağlar.
 
     .. tab:: apply() vs apply_async()
         
-        .. code-block:: python3
+        .. code-block:: python
 
             
             import multiprocessing as mp
             import time
 
             def square(x):
+                #birden fazla argümanlı bir method yaz
                 time.sleep(2)
                 return x*x
 
@@ -212,7 +320,7 @@ Temel amacı, verilen görevi birden fazla işlem arasında paylaştırarak işl
                     pool.join()
                     print(result_list_apply)
 
-                if __name__ == '__main__':
+                if __name__ == '__main__': 
                     print("Apply_async fonksiyonu için")
                     apply_async_with_callback()
                     print("Apply() fonksiyonu için")
@@ -222,118 +330,40 @@ Temel amacı, verilen görevi birden fazla işlem arasında paylaştırarak işl
         .. code-block:: output
 
             Apply_async fonksiyonu için : 
-            [16, 0, 81, 4, 49, 1, 36, 25, 9, 64]
+            [16, 0, 81, 4, 49, 1, 36, 25, 9, 64] 
             Apply() fonksiyonu için :
             [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
 
         .. note:: 
 
-            apply() fonksiyonu Sonuç hazır olana kadar bloke eder. Bu bloklar göz önüne alındığında, apply_async() paralel olarak iş yapmak için daha uygundur. Ayrıca, square fonksiyonu yalnızca havuzdaki işçilerden birinde yürütülür.
+            apply() fonksiyonu Sonuç hazır olana kadar bloke eder. Bu bloklar göz önüne alındığında, apply_async() paralel olarak iş yapmak için daha uygundur.
 
-
-
-    .. tab:: Pooling
-
-        .. code-block:: python
-
-            from multiprocessing import Pool
-            import time
-            import math
-
-            N = 6500000
-
-            def cube(x):
-                return math.sqrt(x)
-
-            if __name__ == "__main__":
-                # Önce çoklu işleme ile çalıştıralım.
-                start_time = time.perf_counter()
-                with Pool() as pool:
-                  result = pool.map(cube, range(10,N))
-                finish_time = time.perf_counter()
-                print("Program {} saniyede tamamlandi. - multiprocessing kullanarak".format(finish_time-start_time))
-                
-                # Sonrasında ise seri bir şekilde çalıştıralım.
-                
-                start_time = time.perf_counter()
-                result = []
-                for x in range(10,N):
-                    result.append(cube(x))
-                finish_time = time.perf_counter()
-                print("Program {} saniyede tamamlandi. - seri bir şekilde".format(finish_time-start_time))
-                print(-----)
-
-    .. tab:: Pooling SLURM
-        
-        .. code-block:: bash
-        
-            #!/bin/bash
-
-            #SBATCH -J pool_ornek2_mpi
-            #SBATCH -p hamsi
-            #SBATCH -N 1
-            #SBATCH -n 4
-            #SBATCH -c 7
-            #SBATCH -A {kullanıcı_adı}
-            #SBATCH -o pool_ornek2
-
-            module purge
-            module load centos7.9/comp/gcc/7
-
-            echo "SLURM_NODELIST $SLURM_NODELIST"
-            echo "NUMBER OF CORES $SLURM_NTASKS
-            srun python3 file3.py
-
-    .. tab:: Pooling Output
-        
-        .. code-block:: bash
-        
-            SLURM_NODELIST hamsi27
-            NUMBER OF CORES 4
-            Program 5.328839018999133 saniyede tamamlandi. - multiprocessing kullanarak
-            Program 7.353244483994786 saniyede tamamlandi - seri bir sekilde 
-            -----
-            Program 9.177415629965253 saniyede tamamlandi. - multiprocessing kullanarak
-            Program 5.0710767389973626 saniyede tamamlandi. - seri bir sekilde 
-            -----
-            Program 7.6777121660416014 saniyede tamamlandi. - multiprocessing kullanarak
-            Program 18.970815424981993 saniyede tamamlandi. - seri bir sekilde 
-            -----
-            Program 12.452059313014615 saniyede tamamlandi. - multiprocessing kullanarak
-            Program 21.805212138977367 saniyede tamamlandi. - seri bir sekilde
-
-
-Pool Ornek 1 açıklaması:
-
-#. ``Pool(processes=2)``  Pool sınıfını kullanarak bir işlem havuzu oluşturuyoruz ve bu işlem havuzunu bir `with` bloğu içinde yönetiyoruz. Bu işlem havuzunda aynı anda en fazla 2 işlem çalıştırılabilir.
-#. ``pool.map()`` fonksiyonunun çok uzun iterable'lar için yüksek bellek kullanımına neden olabileceğini unutmayın. Daha iyi verimlilik için açık chunksize seçeneğiyle imap() veya imap_unordered() kullanmayı tercih edebilirsiniz.
-#.   ``pool.apply_async(os.getpid, ())`` ifadesi işlem havuzundaki bir işlemi paralel olarak başlatır ve sonucunu almak için AsyncResult nesnesini döndürür. Sonucu elde ettiğinizde, bu nesne, işlemin yürütülmesi sırasında elde edilen işlem kimliğini (PID) içerecektir. Apply() fonksiyonuna göre Paralel işlemler için daha uygundur.
-  
 
 
 .. _OpenMP:
 
-=====================================================
+=======
 OpenMP
-=====================================================
+=======
+OpenMP bir bilgisayardaki iş paylaştırma sisteminde çalışabilen bir kod oluşturmak için kullanılan bir paralel programlama modelidir. 
+Aynı belleği paylaşan işlemciler için taşınabilir ve ölçeklenebilir bir programlama modeli sunar. 
 
-OPENMP bir bilgisayardaki iş parçacığı sisteminde çalışabilen bir kod oluşturmak için kullanılan bir paralel programlama modelidir. 
-Paylaşımlı bellek işlemcileri için taşınabilir ve ölçeklenebilir bir programlama modeli sunar. İlk amacı döngüleri parallelleştirmek ve indirgemeler yapmaktır.
-İş parçacıkları aynı kaynaklar için rekabet edip aynı verileri güncellediklerinden OpenMP'de yanlış paylaşım, çekişme ve bellek bant genişliği(memory bandwith) sınırlamaları nedeniyle performans sorunları yaşayabilir.
+OpenBLAS, MKL, BLAS, LAPACK ve NUMBA gibi HPC sistemlerinde sıklıkla kullanılan kütüphaneler OpenMP'den yararlanarak işlemleri paralelleştirirler.
+Bu paralelleştirme işlemini yapmak için, OMP_NUM_THREADS, MKL_NUM_THREADS, OPENBLAS_NUM_THREADS, NUMBA_NUM_THREADS gibi parametreler kullanılabilir.
 
-Python'da OpenMP benzeri paralel programlama yeteneklerine erişmek için, CPython yani Python'ın C dili tabanlı uygulaması ile uyumlu olan **"Numba"** gibi kütüphaneleri kullanabilirsiniz. 
 
-Paylaşımlı bellek sistemleri : 
+Paylaşımlı bellek sistemleri 
 
 .. image:: https://nyu-cds.github.io/python-mpi/fig/01-shared-mem.png
-    :align: center
-*https://nyu-cds.github.io/python-mpi/fig/01-shared-mem.png*
+   :align: center
+
+`kaynakca <https://nyu-cds.github.io/python-mpi/fig/01-shared-mem.png/>`_
 
 
 
-=====================================================
+======
 Numba
-=====================================================
+======
 
 
 Numba, Python programlarını otomatik olarak hızlandırmak için kullanılan bir Just-In-Time (JIT) derleme kütüphanesidir. Numba, özellikle hesaplamalı kodları hızlandırmak için tasarlanmıştır. Python kodunu C benzeri yüksek hızlı makine koduna dönüştürerek işlemci hızından faydalanmanıza olanak tanır. Numba, özellikle büyük diziler üzerindeki işlemleri hızlandırmak için kullanışlıdır ve genellikle numpy dizileri ile birlikte kullanılır.
@@ -351,27 +381,40 @@ Numba, Python programlarını otomatik olarak hızlandırmak için kullanılan b
 
                 from numba import njit,prange
                 import numpy as np
+                import numba as nb
                 import time
-
-                #ikinci çalıştırmada @njit decaratorünü kullanarak JIT derleyicisi ile çalışır. 
                 @njit(parallel=True)
-                def func(x, y):
-                    return x + y
+                def parallel_sum(arr):
+                    total = 0.0
+                    for i in nb.prange(len(arr)):
+                        total += arr[i]
+                    return total
 
-                x = 0.01 * np.arange(1000000).reshape((1000,1000))
-                y = 0.02 * np.arange(1000000).reshape((1000,1000))
 
-                #Sıradan derlenmiş kod yavaş çalışacaktır.
-                start = time.time()
-                z1 = func(x, y)
-                end = time.time()
-                print("İlk fonksiyonun çalışması " + str(end - start) + " saniye aldı.")
+                def serial_sum(arr):
+                    total = 0.0
+                    for i in range(len(arr)):  # nb.prange yerine range kullanıyoruz
+                        total += arr[i]
+                    return total
 
-                # Numba sayesinde JIT derleyicisini kullanarak daha hızlı çalışan bir kod elde edilir.
-                start = time.time()
-                z2 = func(x, y)
-                end = time.time()
-                print("İkinci fonksiyonun çalışması " + str(end - start) + " saniye aldı.")
+
+                if __name__ == '__main__':
+                    data = np.random.rand(100000000)
+                    start = time.time()
+                
+                    result = parallel_sum(data)
+                
+                
+                    print("Sum:", result)
+                    end = time.time()
+                    print("Ilk fonksiyon " , str(end - start) , " saniye aldı.")
+
+                    start2 = time.time()
+                    result_serial = serial_sum(data)
+                
+                    print("Sum:", result_serial)
+                    end2 = time.time()
+                    print("Ikinci fonksiyon " , str(end2 - start2) , " saniye aldı.")
 
     .. group-tab:: numba_python.slurm
         
@@ -380,38 +423,40 @@ Numba, Python programlarını otomatik olarak hızlandırmak için kullanılan b
             #!/bin/bash
             #SBATCH -p barbun 
             #SBATCH -N 1
-            #SBATCH -n 4
+            #SBATCH -n 1
+            #SBATCH -c 4
             #SBATCH -A {kulllanıcı_adı}
-            #SBATCH -o numba_deneme.out
-            #SBATCH -J numba_deneme
+            #SBATCH -o numba_çıktı.out
+            #SBATCH -J numba__work
 
 
             eval "$(/truba/sw/centos7.9/lib/anaconda3/2021.11/bin/conda shell.bash hook)"
-            conda activate numba_deneme
+            conda activate numba_env
 
-            srun python numba_deneme.py
+            export NUMBA_NUM_THREADS=4
+            srun python numba.py
+
+        .. code-block:: bash
+
+            sbatch numba_python.slurm
+
+            işi kuyruğua bu şekilde gönderebilirsiniz.   
 
     .. group-tab:: numba_python.out
 
-        - Ilk fonksiyonun calismasi 0.9587094783782959 saniye aldi.
-        - Ikinci fonksiyonun calisması 0.0076372623443603516 saniye aldi. 
-        - Ilk fonksiyonun calismasi 0.9604973793029785 saniye aldi.
-        - Ikinci fonksiyonun calisması 0.00766754150390625 saniye aldi. 
-        - Ilk fonksiyonun calismasi 0.9557361602783203 saniye aldi.
-        - Ikinci fonksiyonun calisması 0.007283210754394531 saniye aldi.
-        - Ilk fonksiyonun calismasi 0.9614343643188477 saniye aldi.
-        - Ikinci fonksiyonun calisması 0.007330894470214844 saniye aldi.
+           - Sum: 49998201.82653082
+           -  Ilk fonksiyon  **0.5291917324066162**  saniye aldı.
+           - Sum: 49998201.826489806
+           - Ikinci fonksiyon  **10.636533260345459**  saniye aldı.
 
 
 .. _OpenMPI:
 
-=====================================================
+=========
 OpenMPI
-=====================================================
-
-
+=========
 MPI, paralel hesaplama ortamında işlemler arasındaki iletişimi ve koordinasyonu sağlamak için yaygın olarak kullanılan bir standarttır. OpenMPI ise paralel işlemleri yönetmek için kullanılan bir MPI aracıdır. Bu paralel işlemler paylaşılan bir bellek üzerinde olmadığı için iletişim kurmaları gerekir. MPI protokolleri tam olarak burada işimize yarar.
-Bu iletişimde olma hali bazen karmaşıklık yaratabileceği için ağ özelliklerine dikkat edilmelidir. Ağ özellikleri programın performansını etkileyebilir. 
+Bu dağıtık iletişimde olma hali bazen karmaşıklık yaratabileceği için ağ özelliklerine dikkat edilmelidir. Ağ özellikleri programın performansını etkileyebilir. 
 Daha fazla bilgi için `<https://docs.truba.gov.tr/education/openmpi/index.html>`_  adresini ziyaret edebilirsiniz.
 
 .. note:: 
@@ -419,11 +464,9 @@ Daha fazla bilgi için `<https://docs.truba.gov.tr/education/openmpi/index.html>
 
 .. _mpi4py:
 
-=====================================================
+=======
 mpi4py
-=====================================================
-
-
+=======
 mpi4py, paralel ve dağıtık hesaplama için Message Passing Interface (MPI) standardına yönelik bir Python kütüphanesidir. 
 
 1. Conda ortamımızı aktifleştirerek başlarız. 
@@ -451,6 +494,8 @@ mpi4py, paralel ve dağıtık hesaplama için Message Passing Interface (MPI) st
     pip install mpi4py --no-cache-dir
  
    yazarak yükleme işlemimizi tamamlarız.
+
+Aşağıda basit bir MPI örneği görebilirsiniz.
 
 .. tabs::
 
@@ -484,10 +529,10 @@ mpi4py, paralel ve dağıtık hesaplama için Message Passing Interface (MPI) st
             #SBATCH -o hello_mpi          #çıktıların yazılacağı dosya ismi
             #SBATCH -J hello_mpi          #İşin kuyrukta görülecek adı
 
+            module purge
             eval "$(/truba/sw/centos7.9/lib/anaconda3/2021.11/bin/conda shell.bash hook)"
             conda activate fast-mpi4py
-            module purge
-            module load centos7.9/lib/openmpi/4.1.5-gcc-7
+
             mpirun -np 4 python3 hello_mpi.py
 
     .. group-tab:: hello_mpi2.slurm
@@ -499,8 +544,8 @@ mpi4py, paralel ve dağıtık hesaplama için Message Passing Interface (MPI) st
             #SBATCH -N 4                  #n adet taskın başlatılacağı node sayısı
             #SBATCH -n 4                  #başlatılacak görev sayısı
             #SBATCH -A {kullanıcı_adı}    #İşi kuyruğa gönderen kullanıcını ismi
-            #SBATCH -o hello_mpi2          #çıktıların yazılacağı dosya ismi
-            #SBATCH -J hello_mpi2          #İşin kuyrukta görülecek adı
+            #SBATCH -o hello_mpi2         #çıktıların yazılacağı dosya ismi
+            #SBATCH -J hello_mpi2         #İşin kuyrukta görülecek adı
 
             eval "$(/truba/sw/centos7.9/lib/anaconda3/2021.11/bin/conda shell.bash hook)"
             conda activate fast-mpi4py
@@ -524,7 +569,8 @@ mpi4py, paralel ve dağıtık hesaplama için Message Passing Interface (MPI) st
 .. image:: https://blogonparallelcomputing.files.wordpress.com/2017/04/launchmpi1.png
     :width: 600px
     :align: center
-*https://blogonparallelcomputing.files.wordpress.com/2017/04/launchmpi1.png*
+    
+`kaynakça <https://blogonparallelcomputing.files.wordpress.com/2017/04/launchmpi1.png>`_
 
 ++++++++++++++++++
 OPENMPI VS OPENMP
@@ -550,40 +596,61 @@ OPENMPI VS OPENMP
 
         .. code-block:: python
 
-                import math
-                from time import perf_counter
+            import math
+            from time import perf_counter
 
-                def f(x, y):
+            def f(x, y):
                 return x * y
 
-                def integrate_2d(f, x_min, x_max, y_min, y_max, n):
-                
+            def integrate_2d(f, x_min, x_max, y_min, y_max, n):
+
                 dx = (x_max - x_min) / n
                 dy = (y_max - y_min) / n
 
                 integral = 0.0
                 for i in range(n):
                     for j in range(n):
-                    x = x_min + i * dx
-                    y = y_min + j * dy
-                    integral += f(x,y) * dx * dy
+                        x = x_min + i * dx
+                        y = y_min + j * dy
+                        integral += f(x,y) * dx * dy
 
                 return integral
 
 
-                if __name__ == "__main__":
-                    start=perf_counter() 
-                    integral = integrate_2d(f,0,math.pi,0,math.pi,10000)
-                    end=perf_counter()
+            if __name__ == "__main__":
+                start=perf_counter() 
+                integral = integrate_2d(f,0,math.pi,0,math.pi,10000)
+                end=perf_counter()
 
-                    print("Harcanan sure : ", (end-start))
-                    print("Integral degeri: ", integral) 
+                print("Harcanan sure : ", (end-start))
+                print("Integral degeri: ", integral) 
+
+    .. group-tab:: serial.slurm    
+
+        .. code-block:: bash
+
+            #!/bin/bash
+
+            #SBATCH -p barbun 
+            #SBATCH -N 1
+            #SBATCH -n 1
+            #SBATCH -c 4 
+            #SBATCH -A bgorgun
+            #SBATCH --output=/truba/scratch/serial.out
+            #SBATCH -J serial
+
+
+            eval "$(/truba/sw/centos7.9/lib/anaconda3/2021.11/bin/conda shell.bash hook)"
+
+            srun python3 serial_example.py
+
 
         .. code-block:: output
                 
                 Harcanan sure :  28.698472655989463
                 Integral degeri:  24.347402547472264
-    .. group-tab:: serial_with_numba.py
+
+    .. group-tab:: numba.py
 
         .. code-block:: python
 
@@ -607,12 +674,33 @@ OPENMPI VS OPENMP
                 return integral
 
             if __name__ == "__main__":
-            start=perf_counter()
-            integral= integrate_2d(0, math.pi, 0, math.pi, 10000)
-            end=perf_counter()
+                start=perf_counter()
+                integral= integrate_2d(0, math.pi, 0, math.pi, 10000)
+                end=perf_counter()
 
-            print("Harcanan sure :" , (end-start))
-            print("Integral degeri:", integral)
+                print("Harcanan sure :" , (end-start))
+                print("Integral degeri:", integral)
+
+    .. group-tab:: numba.slurm
+
+        .. code-block:: bash
+
+            #!/bin/bash
+            #SBATCH -p barbun 
+            #SBATCH -N 1
+            #SBATCH -n 1
+            #SBATCH -c 4
+            #SBATCH -A bgorgun
+            #SBATCH --output=/truba/scratch/{kullanici_adi}/numba.out
+            #SBATCH -J numba_work
+
+
+            eval "$(/truba/sw/centos7.9/lib/anaconda3/2021.11/bin/conda shell.bash hook)"
+            conda activate numba_env
+
+            export NUMBA_NUM_THREADS=4
+            srun python numba_2d.py
+
 
         .. code-block:: output
 
@@ -620,69 +708,11 @@ OPENMPI VS OPENMP
             Integral degeri: 24.347402547472264
 
 
-    .. group-tab:: threading.py
-        
-        .. code-block:: python
-
-            import threading
-            import math
-            from time import perf_counter
-
-            def f(x, y):
-                return x * y
-
-            numthreads = 4
-            partial_integrals = [None] * numthreads
-
-            def integrate_2d_threading(f, x_min, x_max, y_min, y_max, n, numthreads, threadindex):
-                global partial_integrals
-
-                dx = (x_max - x_min) / float(n)
-                dy = (y_max - y_min) / float(n)
-
-                integral = 0.0
-                workload = n / numthreads
-                begin = int(workload * threadindex)
-                end = int(workload * (threadindex + 1))
-               
-                for i in range(begin, end):
-                    for j in range(n):
-                        x = (x_min + i) * dx
-                        y = (y_min + j) * dy
-                        integral += f(x, y) * dx * dy
-
-                partial_integrals[threadindex] = integral 
-                
-                return partial_integrals
-
-            if __name__ == "__main__":
-                start = perf_counter()
-                threads = []
-
-                for i in range(numthreads):
-                    t = threading.Thread(target=integrate_2d_threading, args=(f, 0, math.pi, 0, math.pi, 10000, 4, i))
-                    threads.append(t)
-                    t.start()
-
-                for t in threads:
-                    t.join()
-
-                integral = sum(partial_integrals)
-                end = perf_counter()
-
-                print("Harcanan sure:", (end - start))
-                print("Integral degeri:", integral)    
-
-        .. code-block:: output
-
-            Harcanan sure: 9.187280416954309
-            Integral degeri: 24.347402547473603
-
 
     .. group-tab:: multiprocessing.py
         
         .. code-block:: python
-           
+
             import math
             from time import perf_counter
             import multiprocessing
@@ -690,13 +720,15 @@ OPENMPI VS OPENMP
 
 
             def f(x, y):
-            return x * y
+                return x * y
+
             numprocess = 4
             partial_integrals = Array('d',[0]*numprocess, lock=False)
 
             def integrate_2d_multiprocess(f, x_min, x_max, y_min, y_max, n,numprocess,processindex):
                 global partial_integrals;
-                h = math.pi / float(n)
+                dx = (x_max-x_min)/ float(n)
+                dy = (y_max-y_min) / float(n)
 
 
                 integral = 0.0
@@ -704,13 +736,14 @@ OPENMPI VS OPENMP
                 begin = int(workload*processindex)
                 end= int(workload*(processindex+1))
 
-            for i in range(begin,end):
-                for j in range(n):
-                x = (x_min + i) * h
-                y = (y_min + j) * h
-                integral += f(x,y)*h*h
-            partial_integrals[processindex]= integral
-            return partial_integrals
+                for i in range(begin,end):
+                    for j in range(n):
+                        x = (x_min + i) * dx
+                        y = (y_min + j) * dy
+                        integral += f(x,y)*dx*dy
+
+                partial_integrals[processindex]= integral
+                return partial_integrals
 
             if __name__ == "__main__":
                 start=perf_counter()
@@ -728,6 +761,25 @@ OPENMPI VS OPENMP
                 print("Harcanan sure: ", (end-start))
                 print("Integral degeri: ", integral)
 
+        .. group-tab:: 
+
+            .. code-block:: bash
+                #!/bin/bash
+
+                #SBATCH -p barbun 
+                #SBATCH -N 1
+                #SBATCH -n 1
+                #SBATCH -c 4 
+                #SBATCH -A bgorgun
+                #SBATCH --output=/truba/scratch/{kullanici_adi}/multiprocess.out
+                #SBATCH -J mp
+
+
+                eval "$(/truba/sw/centos7.9/lib/anaconda3/2021.11/bin/conda shell.bash hook)"
+
+                srun python3 multiprocess_2d.py
+
+
         .. code-block:: output
                
                 Harcanan sure:  8.090660422982182
@@ -735,6 +787,7 @@ OPENMPI VS OPENMP
 
 
     .. group-tab::  mpi_example.py
+
         .. code-block:: python
 
             import math
@@ -744,60 +797,95 @@ OPENMPI VS OPENMP
             comm = MPI.COMM_WORLD
             nprocs = comm.Get_size()
             myrank = comm.Get_rank()
+            processor_name = MPI.Get_processor_name()  # Node ismini al
 
+            def f(x, y):
+                return x * y
 
-            def f(x,y):
-            
-                return x*y 
+            def integrate_2d_mpi(f, x_min, x_max, y_min, y_max, n, nprocs, myrank):
 
-            def integrate_2d_mpi(f,x_min, x_max, y_min, y_max, n,nprocs,myrank):
-            
-                dx = (x_max-x_min) / float(n)
-                dy = (y_max-y_min) / float(n)	
-
+                dx = (x_max - x_min) / float(n)
+                dy = (y_max - y_min) / float(n)
 
                 sum = 0.0
-                workload= n/nprocs
-                begin = int(workload*myrank)
-                end= int(workload*(myrank+1))
+                workload = n // nprocs
+                begin = int(workload * myrank)
+                end = int(workload * (myrank + 1))
 
-                for i in range(begin,end):
+                for i in range(begin, end):
                     for j in range(n):
                         x = (x_min + i) * dx
                         y = (y_min + j) * dy
-                        sum += f(x,y) * dx * dy
-                partial_integrals =  sum
+                        sum += f(x, y) * dx * dy
+                partial_integrals = sum
                 return partial_integrals
 
-                if __name__ == "__main__":
-                    start=perf_counter()
-                
+            if __name__ == "__main__":
+                start = perf_counter()
 
-                p= integrate_2d_mpi(f,0,math.pi,0,math.pi,10000,nprocs,myrank)
-                print("nprocs {},my rank {}".format(nprocs,myrank))
+                p = integrate_2d_mpi(f, 0, math.pi, 0, math.pi, 10000, nprocs, myrank)
                 integral = comm.reduce(p, op=MPI.SUM, root=0)
-                
-                end=perf_counter()
-                if myrank == 0:
-                print("Harcanan sure: ", (end-start))
-                print("Integral degeri: ", integral)
 
+                end = perf_counter()
+
+                if myrank == 0:
+                    print(f"Harcanan süre: {end - start}")
+                    print(f"Integral değeri: {integral}")
+                print(f"Rank {myrank} çalışıyor - Node ismi: {processor_name}")
+
+    .. group-tab::
+
+        .. code-block:: bash
+            #!/bin/bash
+            #SBATCH -p barbun           
+            #SBATCH -N 4                  
+            #SBATCH -n 4                  
+            #SBATCH -A bgorgun
+            #SBATCH --time=00:05:00 
+            #SBATCH --output=/truba/scratch/{kullanici_adi}/openmpi.out          
+            #SBATCH -J hello_mpi          
+
+            module purge
+            eval "$(/truba/sw/centos7.9/lib/anaconda3/2021.11/bin/conda shell.bash hook)"
+            conda activate fast-mpi4py
+
+            mpirun -np 4 python3 openmpi.py
 
         .. code-block:: output
 
-               Harcanan sure:  5.541638394002803
-               Integral degeri:  24.347402547472264
+            Rank 3 çalışıyor - Node ismi: barbun116.yonetim
+            Rank 2 çalışıyor - Node ismi: barbun115.yonetim
+            Rank 1 çalışıyor - Node ismi: barbun91.yonetim
+            Rank 0 çalışıyor - Node ismi: barbun90.yonetim
+
+            Harcanan süre: 6.725769966840744
+            Integral değeri: 24.347402547473603
+            
+               
+
+
+
+
+.. image:: /assets/python-howto/images/1d_integral.png
+    :align: center
+    :width: 180px
+
 
 .. tabs:: 
-    .. group-tab:: 1D Integral Multiprocessing Örneği
+    .. group-tab:: Multiprocessing ve MPI Örneği
 
         .. code-block:: python
 
-            import math
             from time import perf_counter
+            from multiprocessing import Pool
+            from mpi4py import MPI
+
+            comm = MPI.COMM_WORLD
+            nprocs = comm.Get_size()
+            myrank = comm.Get_rank()
+            processor_name = MPI.Get_processor_name()  # Node ismini al
 
             def trapezoidal_rule(f, a, b, n_sub):
-                #n_sub parametresi, toplam alt bölgenin sayısını belirler. Daha yüksek bir n_sub değeri, daha hassas bir integral sonucu elde etmenizi sağlar.
                 h = (b - a) / n_sub
                 integral = 0.5 * (f(a) + f(b))
                 for i in range(1, n_sub):
@@ -807,82 +895,90 @@ OPENMPI VS OPENMP
 
             def f(x):
                 return x
-            from multiprocessing import Process
-            import os
 
-            def integrate_1d_multiprocess(processindex, f, x_min, x_max, n_sub, numprocess):
-                width = (x_max-x_min)/numprocess
-                sub_interval_start = x_min + processindex*width
-                sub_interval_end = x_min + (processindex+1)*width
+            def integrate_1d_multiprocess(sub_interval_start, sub_interval_end, n_sub):
+                return trapezoidal_rule(f, sub_interval_start, sub_interval_end, n_sub)
 
-                result = trapezoidal_rule(f, sub_interval_start, sub_interval_end, n_sub)
-
-                return result
-
-            from multiprocessing import Pool
-
-            #Belirli bir aralıkta (x_min ile x_max), belirli bir fonksiyonu (f(x)) ve belirli bir alt bölge sayısı 
-            #(n_sub) ile trapezoidal integral hesaplamak için paralel işlemleri başlatır.
             def main():
-                numprocess = 4
                 x_min = 0
                 x_max = 4
                 n_sub = 100000
+            
+                #mpi icin kullanilacak core sayisi
+                num_cores_per_rank = 4  
 
                 start = perf_counter()
-                with Pool(processes=numprocess) as p:
-                    result = p.starmap(
-                        integrate_1d_multiprocess,
-                        [(i, f, x_min, x_max, n_sub, numprocess) for i in range(numprocess)],
-                    )
+
+                # Her rank, kendi sub intervalini hesaplar.
+                width = (x_max - x_min) / nprocs
+                sub_interval_start = x_min + myrank * width
+                sub_interval_end = x_min + (myrank + 1) * width
+                
+                print("sub_interval_start", sub_interval_start) 
+                print("sub_interval_end", sub_interval_end)
+            
+                # Paralelleştirme için alt aralıkları berlirledim, pool isleminden once oldu bu.
+                sub_width = (sub_interval_end - sub_interval_start) / num_cores_per_rank
+                print("sub_width", sub_width)
+                sub_intervals = [(sub_interval_start + i * sub_width,
+                                sub_interval_start + (i + 1) * sub_width,
+                                n_sub // num_cores_per_rank) for i in range(num_cores_per_rank)]
+                print("sub intervals",sub_intervals)
+                with Pool(processes=num_cores_per_rank) as p:
+                    local_results = p.starmap(integrate_1d_multiprocess, sub_intervals)
+
+                local_sum = sum(local_results)
+                print(f"Rank {myrank} çalışıyor - Node ismi: {processor_name} {local_sum:.2f} burada hesaplandı")
+
+                # Sonuçları birleştirmek için MPI reduce kullanılır
+                global_sum = comm.reduce(local_sum, op=MPI.SUM, root=0)
 
                 end = perf_counter()
 
-                print("Her bir alt processin sonucu", result)
-                print("Sonuc:", sum(result))
-                print("Harcanan zaman:", end - start)
+                if myrank == 0:
+                    print("Toplam integral sonucu:", global_sum)
+                    print("Harcanan zaman:", end - start)
 
             if __name__ == "__main__":
                 main()
 
+
+
         
    
-    .. group-tab:: (n = 4) SLURM dosyası
+    .. group-tab:: SLURM dosyası
 
         .. code-block:: bash
 
             #!/bin/bash
 
             #SBATCH -p barbun
-            #SBATCH -N 1
+            #SBATCH -N 4
             #SBATCH -n 4
-            #SBATCH -c 1
-            #SBATCH -J integration1D_serial
-            #SBATCH -o multiprocess.out
-            #SBATCH --time=00-02:00
-            #SBATCH -A bgorgun
+            #SBATCH -c 4
+            #SBATCH --cpus-per-task=4
+            #SBATCH -J mpi_omp
+            #SBATCH -o mpi_omp.out
+            #SBATCH --time=00-05:00
+            #SBATCH -A {kullanici_adi}
 
             module purge
+            eval "$(/truba/sw/centos7.9/lib/anaconda3/2021.11/bin/conda shell.bash hook)"
+            conda activate fast-mpi4py
 
-            srun python3 multiprocess.py
+            mpirun -np 4 python3 mpi_omp.py
 
         .. code-block:: output
 
-            Her bir alt processin sonucu [0.4999999999999999, 1.5000000000000004, 2.5, 3.4999999999999996]
-            Sonuc: 8.0
-            Harcanan zaman: 0.2734628692269325
-            Her bir alt processin sonucu [0.4999999999999999, 1.5000000000000004, 2.5, 3.4999999999999996]
-            Sonuc: 8.0
-            Harcanan zaman: 0.2781460005789995
-            Her bir alt processin sonucu [0.4999999999999999, 1.5000000000000004, 2.5, 3.4999999999999996]
-            Sonuc: 8.0
-            Harcanan zaman: 0.2822933550924063
-            Her bir alt processin sonucu [0.4999999999999999, 1.5000000000000004, 2.5, 3.4999999999999996]
-            Sonuc: 8.0
-            Harcanan zaman: 0.28384475968778133
+            Rank 3 çalışıyor - Node ismi: barbun42.yonetim 3.50 burada hesaplandı
+            Rank 1 çalışıyor - Node ismi: barbun15.yonetim 1.50 burada hesaplandı
+            Rank 2 çalışıyor - Node ismi: barbun41.yonetim 2.50 burada hesaplandı
+            Rank 0 çalışıyor - Node ismi: barbun8.yonetim 0.50 burada hesaplandı
+            Toplam integral sonucu: 8.000000000000002
+            Harcanan zaman: 0.07213476859033108
 
 
-    .. group-tab:: (n = 1) SLURM Dosyası
+    .. group-tab:: 
 
         .. code-block:: bash
 
@@ -892,7 +988,7 @@ OPENMPI VS OPENMP
             #SBATCH -N 1
             #SBATCH -n 4
             #SBATCH -c 1
-            #SBATCH -J integration1D_serial
+            #SBATCH -J integration1D_multiprocess
             #SBATCH -o multiprocess.out
             #SBATCH --time=00-02:00
             #SBATCH -A bgorgun
@@ -907,206 +1003,4 @@ OPENMPI VS OPENMP
             Sonuc: 8.0
             Harcanan zaman: 0.2714084889739752
 
-    .. group-tab:: Multithreading Örneği
-
-        .. code-block:: python3  
-
-            import math
-            from time import perf_counter
-            import threading
-
-            def trapezoidal_rule(f, a, b, n_sub=1000):
-                h = (b - a) / n_sub
-                integral = 0.5 * (f(a) + f(b))
-                for i in range(1, n_sub):
-                    integral += f(a + i * h)
-                integral *= h
-                return integral
-
-            import os 
-
-            def integrate_1d_thread(threadindex, f, x_min, x_max, n_sub, numthreads, result_lock, result_list):
-                width = (x_max - x_min) / numthreads
-                sub_interval_start = x_min + threadindex * width
-                sub_interval_end = x_min + (threadindex + 1) * width
-
-                local_result = trapezoidal_rule(f, sub_interval_start, sub_interval_end, n_sub)
-                print("Task assigned to thread: {}".format(threading.current_thread().name))
-
-                print("ID of process running integrate_1d_thread task : {}".format(os.getpid()))
-                with result_lock:
-                    result_list.append(local_result)
-
-            def f(x):
-                return x        
-
-            def main():
-                numthreads = 4
-                x_min = 0
-                x_max = 4
-                n_sub = 10000
-
-                #İş parçacıkları arasında paylaşılan bir kaynağa aynı anda birden çok iş parçacığının müdahalesini önlemek için Lock kullanılır. 
-
-
-                result_lock = threading.Lock()
-                result_list = []
-            
-                start = perf_counter()
-
-                threads = []
-                for i in range(numthreads):
-                    thread = threading.Thread(target=integrate_1d_thread, args=(i, f, x_min, x_max, n_sub, numthreads, result_lock, result_list))
-                    threads.append(thread)
-                    thread.start()
-
-                for thread in threads:
-                    thread.join()
-
-                end = perf_counter()
-
-                print("Her bir alt thread'in sonucu", result_list)
-                print("Sonuç:", sum(result_list))
-                print("Harcanan zaman:", end - start)
-
-            if __name__ == "__main__":
-                main()
-
-
-    .. group-tab:: MT (n=4) SLURM dosyası
-
-        .. code-block:: bash
-
-                #!/bin/bash
-
-            #SBATCH -p barbun
-            #SBATCH -N 1
-            #SBATCH -n 4
-            #SBATCH -c 1
-            #SBATCH -J integration1D_serial
-            #SBATCH -o multithreads.out
-            #SBATCH --time=00-02:00
-            #SBATCH -A bgorgun
-
-            module purge
-
-            srun python3 multithreads.py
-
-        .. code-block:: output
-
-                Task assigned to thread: Thread-1
-                ID of process running integrate_1d_thread task : 435227
-                Task assigned to thread: Thread-2
-                ID of process running integrate_1d_thread task : 435227
-                Task assigned to thread: Thread-3
-                ID of process running integrate_1d_thread task : 435227
-                Task assigned to thread: Thread-4
-                ID of process running integrate_1d_thread task : 435227
-                Her bir alt thread'in sonucu [0.499999999999999, 1.4999999999999996, 2.5, 3.500000000000001]
-                Sonuç: 7.999999999999999
-                Harcanan zaman: 0.021674709860235453
-                Task assigned to thread: Thread-1
-                ID of process running integrate_1d_thread task : 435228
-                Task assigned to thread: Thread-2
-                ID of process running integrate_1d_thread task : 435228
-                Task assigned to thread: Thread-3
-                ID of process running integrate_1d_thread task : 435228
-                Task assigned to thread: Thread-4
-                ID of process running integrate_1d_thread task : 435228
-                Her bir alt thread'in sonucu [0.499999999999999, 1.4999999999999996, 2.5, 3.500000000000001]
-                Sonuç: 7.999999999999999
-                Harcanan zaman: 0.024767708964645863
-                Task assigned to thread: Thread-1
-                ID of process running integrate_1d_thread task : 435226
-                Task assigned to thread: Thread-2
-                ID of process running integrate_1d_thread task : 435226
-                Task assigned to thread: Thread-3
-                ID of process running integrate_1d_thread task : 435226
-                Task assigned to thread: Thread-4
-                ID of process running integrate_1d_thread task : 435226
-                Her bir alt thread'in sonucu [0.499999999999999, 1.4999999999999996, 2.5, 3.500000000000001]
-                Sonuç: 7.999999999999999
-                Harcanan zaman: 0.026993043022230268
-                Task assigned to thread: Thread-1
-                ID of process running integrate_1d_thread task : 435225
-                Task assigned to thread: Thread-2
-                ID of process running integrate_1d_thread task : 435225
-                Task assigned to thread: Thread-3
-                ID of process running integrate_1d_thread task : 435225
-                Task assigned to thread: Thread-4
-                ID of process running integrate_1d_thread task : 435225
-                Her bir alt thread'in sonucu [0.499999999999999, 1.4999999999999996, 2.5, 3.500000000000001]
-                Sonuç: 7.999999999999999
-                Harcanan zaman: 0.03282354190014303
-
-
-
-
-    .. group-tab:: Multithreading (n=1) SLURM dosyası
-
-
-        .. code-block:: bash
-
-                #!/bin/bash
-                #SBATCH -p barbun
-                #SBATCH -N 1
-                #SBATCH -n 1
-                #SBATCH -c 4
-                #SBATCH -J integration1D_threads
-                #SBATCH -o multithreads.out
-                #SBATCH --time=00-02:00
-                #SBATCH -A bgorgun
-
-                module purge
-
-                srun python3 multithreads.py
-
-
-        .. code-block:: output
-
-                Task assigned to thread: Thread-1
-                ID of process running integrate_1d_thread task : 413043
-                Task assigned to thread: Thread-2
-                ID of process running integrate_1d_thread task : 413043
-                Task assigned to thread: Thread-3
-                ID of process running integrate_1d_thread task : 413043
-                Task assigned to thread: Thread-4
-                ID of process running integrate_1d_thread task : 413043
-                Her bir alt thread'in sonucu [0.499999999999999, 1.4999999999999996, 2.5, 3.500000000000001]
-                Sonuç: 7.999999999999999
-                Harcanan zaman: 0.04141010716557503
-
-
-
-        
-
-        
-
-
-
-
-
-
-
-
-            
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    
